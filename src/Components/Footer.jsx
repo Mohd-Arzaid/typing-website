@@ -18,7 +18,7 @@ const Footer = () => {
     <div className="footer">
       
       <div className="links">
-          <a href='https://github.com/Arzaid-aka-Rz' target="_blank" rel="noopener noreferrer">
+          <a href='https://github.com/Mohd-Arzaid' target="_blank" rel="noopener noreferrer">
           <GitHubIcon style={{marginRight:'4px'}}/>
           </a>
           <a href='https://www.linkedin.com/in/mohd-arzaid-3220742ab/' target="_blank" rel="noopener noreferrer">
