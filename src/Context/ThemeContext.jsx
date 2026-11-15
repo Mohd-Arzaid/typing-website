@@ -4,11 +4,25 @@ import { themeOptions } from "../Utils/themeOptions";
 
 const ThemeContext = createContext();
 
+const getStoredTheme = () => {
+    try {
+        const stored = localStorage.getItem("theme");
+        if (!stored) return themeOptions[0].value;
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === "object" && parsed.background) {
+            return parsed;
+        }
+    } catch {
+        // Legacy/invalid values (e.g. plain "light") are not valid JSON
+    }
+    localStorage.removeItem("theme");
+    return themeOptions[0].value;
+};
+
 export const ThemeContextProvider=({children})=>{
 
 
-    const defaultValue = JSON.parse(localStorage.getItem('theme')) || themeOptions[0].value;
-    const [theme, setTheme]=useState(defaultValue);
+    const [theme, setTheme]=useState(getStoredTheme);
 
     const values={
         theme,
