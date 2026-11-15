@@ -4,7 +4,7 @@ import { useTestMode } from "../Context/TestModeContext";
 import Stats from "./Stats";
 
 //random words module is exporting out a function and that function is random word
-var randomWords = require("random-words");
+import randomWords from "random-words";
 
 const TypingBox = () => {
   const inputRef = useRef(null);
