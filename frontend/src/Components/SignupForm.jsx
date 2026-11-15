@@ -1,77 +1,63 @@
 import { Box, Button, TextField } from "@mui/material";
 import { useTheme } from "../Context/ThemeContext";
 import { useState } from "react";
-import { auth } from "../firebaseConfig";
 import { Bounce, toast } from "react-toastify";
-import errorMapping from "../Utils/errorMapping";
+import { signUp } from "../lib/auth-client";
 
-const SignupForm = ({handleClose}) => {
+const SignupForm = ({ handleClose }) => {
   const { theme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit=()=>{
-    if(!email||!password||!confirmPassword){
-      toast.warning('Please fill in all required fields.', {
+  const handleSubmit = async () => {
+    if (!email || !password || !confirmPassword) {
+      toast.warning("Please fill in all required fields.", {
         position: "top-right",
         autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "dark",
-        transition: Bounce,
-      });
-      
-      return;
-    }
-    if(password!==confirmPassword){
-      toast.warning('Password mismatch', {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
         theme: "dark",
         transition: Bounce,
       });
       return;
     }
 
-    //create user
-    auth.createUserWithEmailAndPassword(email,password).then((res)=>{
-      toast.success('User created', {
+    if (password !== confirmPassword) {
+      toast.warning("Password mismatch", {
         position: "top-right",
         autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
         theme: "dark",
         transition: Bounce,
       });
+      return;
+    }
 
-      handleClose();
-    }).catch((err)=>{
-      toast.error(errorMapping[err.code]||'some error occured', {
+    setLoading(true);
+    const { error } = await signUp.email({
+      email,
+      password,
+      name: email.split("@")[0],
+    });
+    setLoading(false);
+
+    if (error) {
+      toast.error(error.message || "some error occured", {
         position: "top-right",
         autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
         theme: "dark",
         transition: Bounce,
       });
-    })
+      return;
+    }
 
-  }
+    toast.success("User created", {
+      position: "top-right",
+      autoClose: 5000,
+      theme: "dark",
+      transition: Bounce,
+    });
+    handleClose();
+  };
 
   return (
     <Box
@@ -138,6 +124,7 @@ const SignupForm = ({handleClose}) => {
         size="large"
         style={{ backgroundColor: theme.title, color: theme.background }}
         onClick={handleSubmit}
+        disabled={loading}
       >
         SignUp
       </Button>

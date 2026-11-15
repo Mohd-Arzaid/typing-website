@@ -37,7 +37,7 @@ const TableUserData = ({ data }) => {
                 <TableCell style={cellStyle}>{i.wpm}</TableCell>
                 <TableCell style={cellStyle}>{i.accuracy}</TableCell>
                 <TableCell style={cellStyle}>{i.characters}</TableCell>
-                <TableCell style={cellStyle}>{i.timeStamp.toDate().toLocaleString()}</TableCell>
+                <TableCell style={cellStyle}>{new Date(i.timeStamp).toLocaleString()}</TableCell>
               </TableRow>
             ))}
           </TableBody>

@@ -1,63 +1,48 @@
 import { Box, Button, TextField } from "@mui/material";
 import { useTheme } from "../Context/ThemeContext";
 import { useState } from "react";
-import { auth } from "../firebaseConfig";
 import { Bounce, toast } from "react-toastify";
-import errorMapping from "../Utils/errorMapping";
+import { signIn } from "../lib/auth-client";
 
-const LoginForm = ({handleClose}) => {
+const LoginForm = ({ handleClose }) => {
   const { theme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = ()=>{
+  const handleSubmit = async () => {
     if (!email || !password) {
-      toast.warning('Please fill in all required fields.', {
+      toast.warning("Please fill in all required fields.", {
         position: "top-right",
         autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
         theme: "dark",
         transition: Bounce,
       });
       return;
     }
-    
-    auth.signInWithEmailAndPassword(email,password).then((res)=>{
-      toast.success('Logged in successfully.', {
+
+    setLoading(true);
+    const { error } = await signIn.email({ email, password });
+    setLoading(false);
+
+    if (error) {
+      toast.error(error.message || "Some error occured", {
         position: "top-right",
         autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
         theme: "dark",
         transition: Bounce,
       });
+      return;
+    }
 
-      handleClose();
-      
-    }).catch((err)=>{
-    
-      toast.error(errorMapping[err.code]||'Some error occured', {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "dark",
-        transition: Bounce,
-      });
-      
-    })
-
-  }
+    toast.success("Logged in successfully.", {
+      position: "top-right",
+      autoClose: 5000,
+      theme: "dark",
+      transition: Bounce,
+    });
+    handleClose();
+  };
 
   return (
     <Box
@@ -106,6 +91,7 @@ const LoginForm = ({handleClose}) => {
         size="large"
         style={{ backgroundColor: theme.title, color: theme.background }}
         onClick={handleSubmit}
+        disabled={loading}
       >
         Login
       </Button>
