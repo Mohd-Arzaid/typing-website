@@ -1,5 +1,6 @@
 import { createRef, useEffect, useMemo, useRef, useState } from "react";
 import { LayoutGroup, motion } from "motion/react";
+import { IconRefresh } from "@tabler/icons-react";
 import UpperMenu from "./UpperMenu";
 import { useTestMode } from "../Context/TestModeContext";
 import Stats from "./Stats";
@@ -45,7 +46,7 @@ const letterText = (el) => {
     .join("");
 };
 
-const TypingBox = ({ onChromeVisibilityChange }) => {
+const TypingBox = () => {
   const inputRef = useRef(null);
   const wordsLayerRef = useRef(null);
   const typingIdleRef = useRef(null);
@@ -73,7 +74,6 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
   const [wordsEpoch, setWordsEpoch] = useState(0);
 
   const tabPressedRef = useRef(false);
-  const chromeTimerRef = useRef(null);
   const testStartRef = useRef(false);
   const testEndRef = useRef(false);
   const currWordIndexRef = useRef(0);
@@ -109,21 +109,6 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
     const typed = correct + incorrectCharsRef.current;
     setLiveWpm(Math.round(correct / 5 / (elapsed / 60)));
     setLiveAcc(typed > 0 ? Math.round((correct / typed) * 100) : 0);
-  };
-
-  const setChrome = (visible) => {
-    onChromeVisibilityChange?.(visible);
-  };
-
-  const scheduleChromeHide = () => {
-    clearTimeout(chromeTimerRef.current);
-    setChrome(true);
-    if (!testStartRef.current || testEndRef.current) return;
-    chromeTimerRef.current = setTimeout(() => {
-      if (testStartRef.current && !testEndRef.current) {
-        setChrome(false);
-      }
-    }, 2500);
   };
 
   const markTypingActive = () => {
@@ -175,8 +160,6 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
           clearInterval(id);
           intervalIdRef.current = null;
           testEndRef.current = true;
-          setChrome(true);
-          clearTimeout(chromeTimerRef.current);
           flushMetrics();
           setScreenFade(0);
           setTimeout(() => {
@@ -194,7 +177,6 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
   const resetTest = () => {
     clearInterval(intervalIdRef.current || intervalId);
     intervalIdRef.current = null;
-    clearTimeout(chromeTimerRef.current);
     clearTimeout(typingIdleRef.current);
     setScreenFade(0);
 
@@ -226,7 +208,6 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
       setIsActivelyTyping(false);
       setWordsArray(randomWords(WORD_BATCH));
       setWordsEpoch((n) => n + 1);
-      setChrome(true);
       focusInput();
       requestAnimationFrame(() => setScreenFade(1));
     }, 150);
@@ -288,7 +269,6 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
       startTimer();
       setTestStart(true);
       testStartRef.current = true;
-      scheduleChromeHide();
     }
 
     ensureWordsAhead(currWordIndex);
@@ -445,16 +425,7 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
   }, []);
 
   useEffect(() => {
-    const onMouseMove = () => {
-      if (testStartRef.current && !testEndRef.current) {
-        scheduleChromeHide();
-      }
-    };
-
-    window.addEventListener("mousemove", onMouseMove);
     return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      clearTimeout(chromeTimerRef.current);
       clearTimeout(typingIdleRef.current);
     };
   }, []);
@@ -641,7 +612,7 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
       </div>
 
       {!showResults && (
-        <div className="chrome mt-2 flex flex-col items-center gap-4 transition-opacity duration-400 ease-in-out">
+        <div className="mt-2 flex flex-col items-center gap-4">
           <button
             type="button"
             className="inline-flex items-center justify-center rounded-lg p-2 text-muted transition-colors hover:text-correct"
@@ -656,28 +627,16 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
                 transform: restartSpinning ? "rotate(360deg)" : "rotate(0deg)",
               }}
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-                className="block h-4.5 w-4.5"
-              >
-                <path d="M21 12a9 9 0 1 1-2.64-6.36" />
-                <polyline points="21 3 21 9 15 9" />
-              </svg>
+              <IconRefresh size={18} stroke={2} aria-hidden />
             </span>
           </button>
-          <div className="hidden items-center gap-4 text-xs text-muted md:flex">
+          <div className="hidden items-center gap-4 text-base text-muted md:flex">
             <span className="flex items-center gap-1.5">
-              <kbd className="rounded border border-border bg-(--kbd-bg) px-1.5 py-0.5 font-mono text-[10px]">
+              <kbd className="rounded border border-border bg-(--kbd-bg) px-2 py-0.5 font-mono text-sm">
                 tab
               </kbd>
               <span>+</span>
-              <kbd className="rounded border border-border bg-(--kbd-bg) px-1.5 py-0.5 font-mono text-[10px]">
+              <kbd className="rounded border border-border bg-(--kbd-bg) px-2 py-0.5 font-mono text-sm">
                 enter
               </kbd>
               <span>- restart test</span>

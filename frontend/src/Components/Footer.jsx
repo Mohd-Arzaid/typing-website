@@ -6,12 +6,12 @@ import GitHubIcon from "@mui/icons-material/GitHub";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
 
 const iconButtonClass =
-  "inline-flex items-center justify-center rounded-lg p-1.5 text-muted transition-colors hover:text-correct focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40";
+  "inline-flex items-center justify-center rounded-lg p-1.5 text-correct transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40";
 
 const Footer = () => {
   const { setTheme, theme } = useTheme();
-  const borderColor =
-    theme.background === "#ffffff" ? "#e4e4e7" : theme.title;
+  const borderColor = theme.background === "#ffffff" ? "#e4e4e7" : theme.title;
+  const iconSx = { fontSize: 24, fill: "currentColor" };
 
   const handleChange = (e) => {
     setTheme(e.value);
@@ -27,7 +27,7 @@ const Footer = () => {
           aria-label="GitHub"
           className={iconButtonClass}
         >
-          <GitHubIcon sx={{ fontSize: 20 }} />
+          <GitHubIcon sx={iconSx} />
         </a>
         <a
           href="https://www.linkedin.com/in/mohd-arzaid-3220742ab/"
@@ -36,7 +36,7 @@ const Footer = () => {
           aria-label="LinkedIn"
           className={iconButtonClass}
         >
-          <LinkedInIcon sx={{ fontSize: 20 }} />
+          <LinkedInIcon sx={iconSx} />
         </a>
         <a
           href="https://x.com/_Arzaid_"
@@ -45,7 +45,7 @@ const Footer = () => {
           aria-label="X"
           className={iconButtonClass}
         >
-          <TwitterIcon sx={{ fontSize: 20 }} />
+          <TwitterIcon sx={iconSx} />
         </a>
       </div>
 

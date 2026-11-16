@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
 import { useTestMode } from "../Context/TestModeContext";
 
-const TIME_OPTIONS = [15, 30, 60];
+const TIME_OPTIONS = [15, 30, 45, 60];
 
 const UpperMenu = ({
   countDown,
@@ -39,7 +39,7 @@ const UpperMenu = ({
         </div>
       </div>
 
-      <div className="chrome transition-opacity duration-400 ease-in-out">
+      <div>
         <div className="inline-flex h-9 w-fit items-center justify-center rounded-lg bg-surface p-[3px] text-muted">
           {TIME_OPTIONS.map((time) => {
             const active = testTime === time;
