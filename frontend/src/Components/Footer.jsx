@@ -5,6 +5,9 @@ import TwitterIcon from "@mui/icons-material/Twitter";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
 
+const iconButtonClass =
+  "inline-flex items-center justify-center rounded-lg p-1.5 text-muted transition-colors hover:text-correct focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40";
+
 const Footer = () => {
   const { setTheme, theme } = useTheme();
   const borderColor =
@@ -16,33 +19,33 @@ const Footer = () => {
 
   return (
     <footer className="mx-auto flex w-full max-w-site flex-wrap items-center justify-between gap-4 py-2 text-muted max-md:justify-center">
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-0.5">
         <a
           href="https://github.com/Mohd-Arzaid"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="GitHub"
-          className="inline-flex opacity-75 transition-colors hover:text-accent hover:opacity-100"
+          className={iconButtonClass}
         >
-          <GitHubIcon fontSize="small" />
+          <GitHubIcon sx={{ fontSize: 20 }} />
         </a>
         <a
           href="https://www.linkedin.com/in/mohd-arzaid-3220742ab/"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="LinkedIn"
-          className="inline-flex opacity-75 transition-colors hover:text-accent hover:opacity-100"
+          className={iconButtonClass}
         >
-          <LinkedInIcon fontSize="small" />
+          <LinkedInIcon sx={{ fontSize: 20 }} />
         </a>
         <a
           href="https://x.com/_Arzaid_"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="X"
-          className="inline-flex opacity-75 transition-colors hover:text-accent hover:opacity-100"
+          className={iconButtonClass}
         >
-          <TwitterIcon fontSize="small" />
+          <TwitterIcon sx={{ fontSize: 20 }} />
         </a>
       </div>
 

@@ -1,4 +1,5 @@
 import { createRef, useEffect, useMemo, useRef, useState } from "react";
+import { LayoutGroup, motion } from "motion/react";
 import UpperMenu from "./UpperMenu";
 import { useTestMode } from "../Context/TestModeContext";
 import Stats from "./Stats";
@@ -8,7 +9,7 @@ const EXTRA_CHAR_CAP = 10;
 const WORD_REFILL_THRESHOLD = 10;
 const WORD_BATCH = 50;
 
-const CHAR_BASE = "relative inline-block transition-colors duration-75";
+const CHAR_BASE = "relative inline-block transition-colors duration-[60ms]";
 const CLS = {
   correct: `${CHAR_BASE} text-correct is-correct`,
   incorrect: `${CHAR_BASE} text-error is-incorrect`,
@@ -21,31 +22,20 @@ const CLS = {
 const WORD_BASE = "relative m-0 whitespace-nowrap";
 const WORD_ERROR = `${WORD_BASE} after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:rounded-full after:bg-error/50`;
 
+const CARET_SPRING = { type: "spring", stiffness: 700, damping: 38, mass: 0.6 };
 const CARET_LEFT =
   "typing-cursor absolute top-0.5 -left-px h-[1.2em] w-0.5 rounded-full bg-caret";
 const CARET_RIGHT =
   "typing-cursor absolute top-0.5 -right-px h-[1.2em] w-0.5 rounded-full bg-caret";
 
-const clearCarets = (root) => {
-  root?.querySelectorAll(".typing-cursor").forEach((el) => el.remove());
-};
-
-const placeCaret = (wordEl, charIdx, atEnd = false) => {
-  if (!wordEl) return;
-  clearCarets(wordEl.parentElement || wordEl);
-  const letters = Array.from(wordEl.children);
-  if (!letters.length) return;
-
-  const target = atEnd
-    ? letters[letters.length - 1]
-    : letters[Math.min(charIdx, letters.length - 1)];
-  if (!target) return;
-
-  const caret = document.createElement("span");
-  caret.className = atEnd ? CARET_RIGHT : CARET_LEFT;
-  caret.setAttribute("aria-hidden", "true");
-  target.prepend(caret);
-};
+const Caret = ({ atEnd = false }) => (
+  <motion.span
+    layoutId="cursor-active"
+    className={atEnd ? CARET_RIGHT : CARET_LEFT}
+    transition={CARET_SPRING}
+    aria-hidden="true"
+  />
+);
 
 const letterText = (el) => {
   if (!el) return "";
@@ -70,6 +60,8 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
   const [missedChars, setMissedChars] = useState(0);
   const [correctWords, setCorrectWords] = useState(0);
   const [extraChars, setExtraChars] = useState(0);
+  const [liveWpm, setLiveWpm] = useState(null);
+  const [liveAcc, setLiveAcc] = useState(null);
   const [graphData, setGraphData] = useState([]);
   const [isFocused, setIsFocused] = useState(true);
   const [capsOn, setCapsOn] = useState(false);
@@ -86,6 +78,12 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
   const testEndRef = useRef(false);
   const currWordIndexRef = useRef(0);
   const currCharIndexRef = useRef(0);
+  const correctCharsRef = useRef(0);
+  const incorrectCharsRef = useRef(0);
+  const missedCharsRef = useRef(0);
+  const correctWordsRef = useRef(0);
+  const extraCharsRef = useRef(0);
+  const intervalIdRef = useRef(null);
 
   const [wordsArray, setWordsArray] = useState(() => randomWords(WORD_BATCH));
   const [currWordIndex, setCurrWordIndex] = useState(0);
@@ -97,15 +95,21 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
       .map(() => createRef(null));
   }, [wordsArray.length]);
 
-  const elapsed = Math.max(testTime - countDown, 1);
-  const liveWpm = testStart
-    ? Math.round(correctChars / 5 / (elapsed / 60))
-    : null;
-  const typedTotal = correctChars + incorrectChars;
-  const liveAcc =
-    testStart && typedTotal > 0
-      ? Math.round((correctChars / typedTotal) * 100)
-      : null;
+  const flushMetrics = () => {
+    setCorrectChars(correctCharsRef.current);
+    setIncorrectChars(incorrectCharsRef.current);
+    setMissedChars(missedCharsRef.current);
+    setCorrectWords(correctWordsRef.current);
+    setExtraChars(extraCharsRef.current);
+  };
+
+  const updateLiveStats = (secondsElapsed) => {
+    const elapsed = Math.max(secondsElapsed, 1);
+    const correct = correctCharsRef.current;
+    const typed = correct + incorrectCharsRef.current;
+    setLiveWpm(Math.round(correct / 5 / (elapsed / 60)));
+    setLiveAcc(typed > 0 ? Math.round((correct / typed) * 100) : 0);
+  };
 
   const setChrome = (visible) => {
     onChromeVisibilityChange?.(visible);
@@ -147,38 +151,33 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
     });
   };
 
-  const syncCaret = (wordIdx, charIdx) => {
-    requestAnimationFrame(() => {
-      const wordEl = wordsSpanRef[wordIdx]?.current;
-      if (!wordEl) return;
-      const letters = Array.from(wordEl.children);
-      const atEnd = charIdx >= letters.length;
-      placeCaret(wordEl, charIdx, atEnd);
-      updateScroll();
-    });
+  const focusInput = () => {
+    inputRef.current?.focus();
   };
 
   const startTimer = () => {
     const id = setInterval(timer, 1000);
+    intervalIdRef.current = id;
     setIntervalId(id);
     function timer() {
       setCountDown((latestCountDown) => {
-        setCorrectChars((correctCharsLatest) => {
-          setGraphData((graphDataLatest) => [
-            ...graphDataLatest,
-            [
-              testTime - latestCountDown + 1,
-              correctCharsLatest / 5 / ((testTime - latestCountDown + 1) / 60),
-            ],
-          ]);
-          return correctCharsLatest;
-        });
+        const nextElapsed = testTime - latestCountDown + 1;
+        setGraphData((graphDataLatest) => [
+          ...graphDataLatest,
+          [
+            nextElapsed,
+            correctCharsRef.current / 5 / (nextElapsed / 60),
+          ],
+        ]);
+        updateLiveStats(nextElapsed);
 
         if (latestCountDown === 1) {
           clearInterval(id);
+          intervalIdRef.current = null;
           testEndRef.current = true;
           setChrome(true);
           clearTimeout(chromeTimerRef.current);
+          flushMetrics();
           setScreenFade(0);
           setTimeout(() => {
             setTestEnd(true);
@@ -193,7 +192,8 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
   };
 
   const resetTest = () => {
-    clearInterval(intervalId);
+    clearInterval(intervalIdRef.current || intervalId);
+    intervalIdRef.current = null;
     clearTimeout(chromeTimerRef.current);
     clearTimeout(typingIdleRef.current);
     setScreenFade(0);
@@ -209,11 +209,18 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
       setShowResults(false);
       testStartRef.current = false;
       testEndRef.current = false;
+      correctCharsRef.current = 0;
+      incorrectCharsRef.current = 0;
+      missedCharsRef.current = 0;
+      correctWordsRef.current = 0;
+      extraCharsRef.current = 0;
       setCorrectChars(0);
       setIncorrectChars(0);
       setMissedChars(0);
       setCorrectWords(0);
       setExtraChars(0);
+      setLiveWpm(null);
+      setLiveAcc(null);
       setGraphData([]);
       setRowOffset(0);
       setIsActivelyTyping(false);
@@ -225,9 +232,18 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
     }, 150);
   };
 
-  const handleRestartClick = () => {
+  const handleRestartClick = (e) => {
+    e?.stopPropagation?.();
     setRestartSpinning(true);
     setTimeout(() => setRestartSpinning(false), 600);
+    resetTest();
+  };
+
+  const handlePlaygroundClick = () => {
+    if (!isFocused) {
+      focusInput();
+      return;
+    }
     resetTest();
   };
 
@@ -236,7 +252,6 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
       if (ref.current) {
         ref.current.className = WORD_BASE;
         Array.from(ref.current.children).forEach((child) => {
-          clearCarets(child);
           child.className = CLS.empty;
         });
       }
@@ -245,7 +260,6 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
     const first = wordsSpanRef[0]?.current?.children?.[0];
     if (first) {
       first.className = CLS.current;
-      placeCaret(wordsSpanRef[0].current, 0, false);
     }
     updateScroll();
   };
@@ -291,7 +305,7 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
       const correctInWord = wordEl.querySelectorAll(".is-correct").length;
       const extras = wordEl.querySelectorAll(".is-extra").length;
       if (correctInWord === baseLen && extras === 0) {
-        setCorrectWords((w) => w + 1);
+        correctWordsRef.current += 1;
       } else {
         wordEl.className = WORD_ERROR;
       }
@@ -299,11 +313,9 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
       if (letters.length <= currCharIndex) {
         letters[currCharIndex - 1]?.classList.remove("current-right");
       } else {
-        setMissedChars((m) => m + (letters.length - currCharIndex));
+        missedCharsRef.current += letters.length - currCharIndex;
         letters[currCharIndex]?.classList.remove("current");
       }
-
-      clearCarets(wordsLayerRef.current);
 
       const nextIdx = currWordIndex + 1;
       const nextWord = wordsSpanRef[nextIdx]?.current;
@@ -314,7 +326,7 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
       setCurrCharIndex(0);
       currWordIndexRef.current = nextIdx;
       currCharIndexRef.current = 0;
-      syncCaret(nextIdx, 0);
+      updateScroll();
       return;
     }
 
@@ -331,13 +343,14 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
               .replace("current-right", "")
               .trim()} current-right`.trim();
           }
+          extraCharsRef.current = Math.max(0, extraCharsRef.current - 1);
         } else {
           last.className = CLS.current;
         }
         const next = currCharIndex - 1;
         setCurrCharIndex(next);
         currCharIndexRef.current = next;
-        syncCaret(currWordIndex, next);
+        updateScroll();
         return;
       }
 
@@ -346,7 +359,7 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
       const next = currCharIndex - 1;
       setCurrCharIndex(next);
       currCharIndexRef.current = next;
-      syncCaret(currWordIndex, next);
+      updateScroll();
       return;
     }
 
@@ -364,18 +377,18 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
       const next = currCharIndex + 1;
       setCurrCharIndex(next);
       currCharIndexRef.current = next;
-      setExtraChars((x) => x + 1);
-      syncCaret(currWordIndex, next);
+      extraCharsRef.current += 1;
+      updateScroll();
       return;
     }
 
     const active = letters[currCharIndex];
     if (e.key === letterText(active)) {
       active.className = CLS.correct;
-      setCorrectChars((c) => c + 1);
+      correctCharsRef.current += 1;
     } else {
       active.className = CLS.incorrect;
-      setIncorrectChars((c) => c + 1);
+      incorrectCharsRef.current += 1;
     }
 
     if (currCharIndex + 1 === letters.length) {
@@ -387,10 +400,11 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
     const next = currCharIndex + 1;
     setCurrCharIndex(next);
     currCharIndexRef.current = next;
-    syncCaret(currWordIndex, next);
+    updateScroll();
   };
 
-  const calculateWPM = () => Math.round(correctChars / 5 / (testTime / 60));
+  const calculateWPM = () =>
+    Math.round(correctChars / 5 / (testTime / 60));
 
   const calculateAcc = () => {
     if (!currWordIndex) return 0;
@@ -400,10 +414,6 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
   const calculateRaw = () => {
     const total = correctChars + incorrectChars + extraChars;
     return Math.round(total / 5 / (testTime / 60));
-  };
-
-  const focusInput = () => {
-    inputRef.current?.focus();
   };
 
   useEffect(() => {
@@ -421,15 +431,12 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
     requestAnimationFrame(() => {
       const wordEl = wordsSpanRef[idx]?.current;
       if (!wordEl) return;
-      if (
-        !wordEl.querySelector(".typing-cursor") &&
-        !wordEl.querySelector(".current, .current-right")
-      ) {
+      if (!wordEl.querySelector(".current, .current-right")) {
         if (charIdx === 0 && wordEl.children[0]) {
           wordEl.children[0].className = CLS.current;
         }
       }
-      syncCaret(idx, charIdx);
+      updateScroll();
     });
   }, [wordsArray.length]);
 
@@ -552,7 +559,7 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
               ]
                 .filter(Boolean)
                 .join(" ")}
-              onClick={focusInput}
+              onClick={handlePlaygroundClick}
             >
               <input
                 type="text"
@@ -581,25 +588,48 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
                   .join(" ")}
                 style={{ transform: `translateY(-${rowOffset}px)` }}
               >
-                <div className="flex flex-wrap gap-x-2.5 gap-y-1 text-untyped">
-                  {wordsArray.map((word, index) => (
-                    <span
-                      className={WORD_BASE}
-                      ref={wordsSpanRef[index]}
-                      key={`${word}-${index}`}
-                    >
-                      {word.split("").map((char, charIndex) => (
-                        <span key={charIndex} className={CHAR_BASE}>
-                          {char}
+                <LayoutGroup id="words">
+                  <div className="flex flex-wrap gap-x-2.5 gap-y-1 text-untyped">
+                    {wordsArray.map((word, index) => {
+                      const isActiveWord = index === currWordIndex;
+                      const cursorAtEnd =
+                        isActiveWord && currCharIndex >= word.length;
+
+                      return (
+                        <span
+                          className={WORD_BASE}
+                          ref={wordsSpanRef[index]}
+                          key={`${word}-${index}`}
+                        >
+                          {word.split("").map((char, charIndex) => {
+                            const showCaretLeft =
+                              isActiveWord && charIndex === currCharIndex;
+                            const showCaretRight =
+                              cursorAtEnd && charIndex === word.length - 1;
+
+                            return (
+                              <span key={charIndex} className={CHAR_BASE}>
+                                {showCaretLeft && <Caret />}
+                                {showCaretRight && <Caret atEnd />}
+                                {char}
+                              </span>
+                            );
+                          })}
                         </span>
-                      ))}
-                    </span>
-                  ))}
-                </div>
+                      );
+                    })}
+                  </div>
+                </LayoutGroup>
               </div>
 
               {!isFocused && (
-                <div className="absolute inset-0 z-20 flex cursor-pointer items-center justify-center">
+                <div
+                  className="absolute inset-0 z-20 flex cursor-pointer items-center justify-center"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    focusInput();
+                  }}
+                >
                   <span className="flex items-center gap-2 text-sm font-medium text-accent">
                     Click or press Enter to focus
                   </span>
