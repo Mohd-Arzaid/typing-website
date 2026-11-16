@@ -152,7 +152,6 @@ const Footer = () => {
           onChange={handleChange}
           onMenuOpen={() => setPauseRefocus(true)}
           onMenuClose={resumeTypingFocus}
-          onBlur={resumeTypingFocus}
           options={themeOptions}
           menuPlacement="top"
           menuPortalTarget={typeof document !== "undefined" ? document.body : null}

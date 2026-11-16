@@ -27,6 +27,7 @@ const Header = ({ onLogoClick }) => {
       {isHome && onLogoClick ? (
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={onLogoClick}
           className={brandClass}
           aria-label="Restart typing test"

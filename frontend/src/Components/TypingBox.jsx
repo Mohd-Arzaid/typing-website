@@ -10,6 +10,8 @@ import randomWords from "random-words";
 const EXTRA_CHAR_CAP = 10;
 const WORD_REFILL_THRESHOLD = 10;
 const WORD_BATCH = 50;
+/** Monkeytype-style delay before showing the out-of-focus overlay */
+const OUT_OF_FOCUS_DELAY_MS = 1000;
 
 const CHAR_BASE = "relative inline-block transition-colors duration-[60ms]";
 const CLS = {
@@ -51,6 +53,7 @@ const TypingBox = () => {
   const inputRef = useRef(null);
   const wordsLayerRef = useRef(null);
   const typingIdleRef = useRef(null);
+  const blurTimeoutRef = useRef(null);
   const { testTime } = useTestMode();
   const { pauseRef, registerFocusInput } = useTypingFocus();
 
@@ -138,10 +141,18 @@ const TypingBox = () => {
     });
   };
 
+  const clearBlurTimeout = useCallback(() => {
+    if (blurTimeoutRef.current != null) {
+      clearTimeout(blurTimeoutRef.current);
+      blurTimeoutRef.current = null;
+    }
+  }, []);
+
   const focusInput = useCallback(() => {
+    clearBlurTimeout();
     inputRef.current?.focus();
     setIsFocused(true);
-  }, []);
+  }, [clearBlurTimeout]);
 
   const handleFocus = () => {
     if (pauseRef.current) return;
@@ -157,10 +168,17 @@ const TypingBox = () => {
 
   const handleInputBlur = () => {
     if (pauseRef.current) return;
-    setIsFocused(false);
+    clearBlurTimeout();
+    blurTimeoutRef.current = setTimeout(() => {
+      blurTimeoutRef.current = null;
+      if (pauseRef.current) return;
+      if (document.activeElement === inputRef.current) return;
+      setIsFocused(false);
+    }, OUT_OF_FOCUS_DELAY_MS);
   };
 
   const handleInputFocus = () => {
+    clearBlurTimeout();
     setIsFocused(true);
   };
 
@@ -455,6 +473,10 @@ const TypingBox = () => {
   useEffect(() => {
     return () => {
       clearTimeout(typingIdleRef.current);
+      if (blurTimeoutRef.current != null) {
+        clearTimeout(blurTimeoutRef.current);
+        blurTimeoutRef.current = null;
+      }
     };
   }, []);
 
