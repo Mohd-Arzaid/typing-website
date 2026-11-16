@@ -13,6 +13,7 @@ const AccountCircle = () => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(0);
   const { theme } = useTheme();
+  const toastTheme = theme.background === "#ffffff" ? "light" : "dark";
   const navigate = useNavigate();
   const { data: session } = useSession();
   const user = session?.user;
@@ -39,7 +40,7 @@ const AccountCircle = () => {
       toast.error("Not able to logout", {
         position: "top-right",
         autoClose: 5000,
-        theme: "dark",
+        theme: toastTheme,
         transition: Bounce,
       });
       return;
@@ -48,7 +49,7 @@ const AccountCircle = () => {
     toast.success("Logged out", {
       position: "top-right",
       autoClose: 5000,
-      theme: "dark",
+      theme: toastTheme,
       transition: Bounce,
     });
   };
@@ -63,7 +64,7 @@ const AccountCircle = () => {
       toast.error(error.message || "Not able to use google authentication", {
         position: "top-right",
         autoClose: 5000,
-        theme: "dark",
+        theme: toastTheme,
         transition: Bounce,
       });
     }
@@ -82,7 +83,20 @@ const AccountCircle = () => {
           justifyContent: "center",
         }}
       >
-        <div style={{ width: "400px", textAlign: "center" }}>
+        <div
+          style={{
+            width: "min(400px, 92vw)",
+            textAlign: "center",
+            background: theme.background,
+            color: theme.textColor,
+            borderRadius: "12px",
+            padding: "12px 16px 20px",
+            border:
+              theme.background === "#ffffff"
+                ? "1px solid #e4e4e7"
+                : "1px solid rgba(255,255,255,0.12)",
+          }}
+        >
           <AppBar position="static" style={{ background: "transparent" }}>
             <Tabs
               value={value}

@@ -10,7 +10,10 @@ const getStoredTheme = () => {
         if (!stored) return themeOptions[0].value;
         const parsed = JSON.parse(stored);
         if (parsed && typeof parsed === "object" && parsed.background) {
-            return parsed;
+            const matched = themeOptions.find(
+                (option) => option.label === parsed.label
+            );
+            return matched ? matched.value : { ...themeOptions[0].value, ...parsed };
         }
     } catch {
         // Legacy/invalid values (e.g. plain "light") are not valid JSON

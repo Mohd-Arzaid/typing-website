@@ -6,6 +6,7 @@ import { signUp } from "../lib/auth-client";
 
 const SignupForm = ({ handleClose }) => {
   const { theme } = useTheme();
+  const toastTheme = theme.background === "#ffffff" ? "light" : "dark";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -16,7 +17,7 @@ const SignupForm = ({ handleClose }) => {
       toast.warning("Please fill in all required fields.", {
         position: "top-right",
         autoClose: 5000,
-        theme: "dark",
+        theme: toastTheme,
         transition: Bounce,
       });
       return;
@@ -26,7 +27,7 @@ const SignupForm = ({ handleClose }) => {
       toast.warning("Password mismatch", {
         position: "top-right",
         autoClose: 5000,
-        theme: "dark",
+        theme: toastTheme,
         transition: Bounce,
       });
       return;
@@ -44,7 +45,7 @@ const SignupForm = ({ handleClose }) => {
       toast.error(error.message || "some error occured", {
         position: "top-right",
         autoClose: 5000,
-        theme: "dark",
+        theme: toastTheme,
         transition: Bounce,
       });
       return;
@@ -53,7 +54,7 @@ const SignupForm = ({ handleClose }) => {
     toast.success("User created", {
       position: "top-right",
       autoClose: 5000,
-      theme: "dark",
+      theme: toastTheme,
       transition: Bounce,
     });
     handleClose();

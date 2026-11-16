@@ -1,7 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-
 export async function saveResult(payload) {
-  const response = await fetch(`${API_URL}/api/v1/results`, {
+  const response = await fetch("/api/v1/results", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -18,7 +16,7 @@ export async function saveResult(payload) {
 }
 
 export async function fetchResults() {
-  const response = await fetch(`${API_URL}/api/v1/results`, {
+  const response = await fetch("/api/v1/results", {
     credentials: "include",
   });
 

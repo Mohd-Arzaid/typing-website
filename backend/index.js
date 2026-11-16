@@ -9,12 +9,16 @@ import resultRoute from "./routes/result.route.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
 
-const corsOptions = {
-  origin: process.env.FRONTEND_URL,
-  credentials: true,
-};
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    origin: frontendUrl,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  })
+);
 
 app.all("/api/auth/*", toNodeHandler(auth));
 

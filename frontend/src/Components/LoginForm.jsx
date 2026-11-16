@@ -6,6 +6,7 @@ import { signIn } from "../lib/auth-client";
 
 const LoginForm = ({ handleClose }) => {
   const { theme } = useTheme();
+  const toastTheme = theme.background === "#ffffff" ? "light" : "dark";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -15,7 +16,7 @@ const LoginForm = ({ handleClose }) => {
       toast.warning("Please fill in all required fields.", {
         position: "top-right",
         autoClose: 5000,
-        theme: "dark",
+        theme: toastTheme,
         transition: Bounce,
       });
       return;
@@ -29,7 +30,7 @@ const LoginForm = ({ handleClose }) => {
       toast.error(error.message || "Some error occured", {
         position: "top-right",
         autoClose: 5000,
-        theme: "dark",
+        theme: toastTheme,
         transition: Bounce,
       });
       return;
@@ -38,7 +39,7 @@ const LoginForm = ({ handleClose }) => {
     toast.success("Logged in successfully.", {
       position: "top-right",
       autoClose: 5000,
-      theme: "dark",
+      theme: toastTheme,
       transition: Bounce,
     });
     handleClose();

@@ -11,17 +11,17 @@ import UserPage from "./Pages/UserPage";
 
 function App() {
   const { theme } = useTheme();
+  const toastTheme = theme.background === "#ffffff" ? "light" : "dark";
+
   return (
     <ThemeProvider theme={theme}>
-      <ToastContainer />
+      <ToastContainer theme={toastTheme} />
       <GlobalStyles />
 
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/user" element={<UserPage />} />
-
       </Routes>
-      
     </ThemeProvider>
   );
 }

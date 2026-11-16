@@ -2,8 +2,6 @@ import { createRef, useEffect, useMemo, useRef, useState } from "react";
 import UpperMenu from "./UpperMenu";
 import { useTestMode } from "../Context/TestModeContext";
 import Stats from "./Stats";
-
-//random words module is exporting out a function and that function is random word
 import randomWords from "random-words";
 
 const TypingBox = () => {
@@ -19,6 +17,7 @@ const TypingBox = () => {
   const [correctWords, setCorrectWords] = useState(0);
   const [extraChars, setExtraChars] = useState(0);
   const [graphData, setGraphData] = useState([]);
+  const tabPressedRef = useRef(false);
 
   const [wordsArray, setWordsArray] = useState(() => randomWords(50));
 
@@ -32,24 +31,24 @@ const TypingBox = () => {
   }, [wordsArray]);
 
   const startTimer = () => {
-    const intervalId = setInterval(timer, 1000);
-    setIntervalId(intervalId);
+    const id = setInterval(timer, 1000);
+    setIntervalId(id);
     function timer() {
       setCountDown((latestCountDown) => {
-        setCorrectChars((correctChars) => {
-          setGraphData((graphData) => [
-            ...graphData,
+        setCorrectChars((correctCharsLatest) => {
+          setGraphData((graphDataLatest) => [
+            ...graphDataLatest,
             [
               testTime - latestCountDown + 1,
-              correctChars / 5 / ((testTime - latestCountDown + 1) / 60),
+              correctCharsLatest / 5 / ((testTime - latestCountDown + 1) / 60),
             ],
           ]);
-          return correctChars;
+          return correctCharsLatest;
         });
 
         if (latestCountDown === 1) {
           setTestEnd(true);
-          clearInterval(intervalId);
+          clearInterval(id);
           return 0;
         }
         return latestCountDown - 1;
@@ -64,15 +63,22 @@ const TypingBox = () => {
     setCurrCharIndex(0);
     setTestStart(false);
     setTestEnd(false);
+    setCorrectChars(0);
+    setIncorrectChars(0);
+    setMissedChars(0);
+    setCorrectWords(0);
+    setExtraChars(0);
+    setGraphData([]);
     setWordsArray(randomWords(50));
-    resetWordSpanRefClassname();
     focusInput();
   };
 
   const resetWordSpanRefClassname = () => {
     wordsSpanRef.forEach((ref) => {
       if (ref.current) {
-        Array.from(ref.current.childNodes).forEach((child) => (child.className = ""));
+        Array.from(ref.current.childNodes).forEach(
+          (child) => (child.className = "")
+        );
       }
     });
 
@@ -91,7 +97,9 @@ const TypingBox = () => {
     if (!allCurrChars) return;
 
     if (e.keyCode === 32) {
-      let correctCharsInWord = wordsSpanRef[currWordIndex]?.current?.querySelectorAll(".correct") || [];
+      const correctCharsInWord =
+        wordsSpanRef[currWordIndex]?.current?.querySelectorAll(".correct") ||
+        [];
 
       if (correctCharsInWord.length === allCurrChars.length) {
         setCorrectWords(correctWords + 1);
@@ -105,7 +113,8 @@ const TypingBox = () => {
       }
 
       if (wordsSpanRef[currWordIndex + 1]?.current) {
-        wordsSpanRef[currWordIndex + 1].current.childNodes[0].className = "current";
+        wordsSpanRef[currWordIndex + 1].current.childNodes[0].className =
+          "current";
       }
       setCurrWordIndex(currWordIndex + 1);
       setCurrCharIndex(0);
@@ -134,7 +143,7 @@ const TypingBox = () => {
     }
 
     if (currCharIndex === allCurrChars.length) {
-      let newSpan = document.createElement("span");
+      const newSpan = document.createElement("span");
       newSpan.innerText = e.key;
       newSpan.className = "incorrect extra current-right";
       allCurrChars[currCharIndex - 1].classList.remove("current-right");
@@ -166,7 +175,7 @@ const TypingBox = () => {
   const calculateAcc = () => Math.round((correctWords / currWordIndex) * 100);
 
   const focusInput = () => {
-    inputRef.current.focus();
+    inputRef.current?.focus();
   };
 
   useEffect(() => {
@@ -174,11 +183,41 @@ const TypingBox = () => {
   }, [testTime]);
 
   useEffect(() => {
+    resetWordSpanRefClassname();
+  }, [wordsArray]);
+
+  useEffect(() => {
     focusInput();
-    if (wordsSpanRef[0]?.current) {
-      wordsSpanRef[0].current.childNodes[0].className = "current";
-    }
   }, []);
+
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        tabPressedRef.current = true;
+        return;
+      }
+
+      if (e.key === "Enter" && tabPressedRef.current) {
+        e.preventDefault();
+        tabPressedRef.current = false;
+        resetTest();
+      }
+    };
+
+    const onKeyUp = (e) => {
+      if (e.key === "Tab") {
+        tabPressedRef.current = false;
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, [intervalId, testTime]);
 
   return (
     <div>
@@ -207,11 +246,44 @@ const TypingBox = () => {
         </div>
       )}
 
+      <div className="test-controls">
+        <button
+          type="button"
+          className="restart-btn"
+          onClick={resetTest}
+          aria-label="Restart test"
+          title="Restart test"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+            <polyline points="21 3 21 9 15 9" />
+          </svg>
+        </button>
+        <div className="shortcut-hint">
+          <kbd>tab</kbd>
+          <span>+</span>
+          <kbd>enter</kbd>
+          <span>- restart test</span>
+        </div>
+      </div>
+
       <input
         type="text"
         className="hidden-input"
         ref={inputRef}
         onKeyDown={handleUserInput}
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
       />
     </div>
   );

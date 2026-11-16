@@ -1,29 +1,30 @@
-import { useTestMode } from "../Context/TestModeContext"
+import { useTestMode } from "../Context/TestModeContext";
 
-const UpperMenu = ({countDown}) => {
+const UpperMenu = ({ countDown }) => {
+  const { testTime, setTestTime } = useTestMode();
 
+  const updateTime = (e) => {
+    setTestTime(Number(e.target.id));
+  };
 
-    const {setTestTime}=useTestMode();
-    
-    const updateTime=(e)=>{
-        setTestTime(Number(e.target.id));
-    }
-
-    
   return (
     <div className="upper-menu">
-        <div className="counter">
-            {countDown}
-        </div>
+      <div className="counter">{countDown}</div>
 
-        <div className="modes"> 
-    <div className="time-mode" id={15} onClick={updateTime}>15s</div>
-    <div className="time-mode" id={30} onClick={updateTime}>30s</div>
-    <div className="time-mode" id={60} onClick={updateTime}>60s</div>
-        </div>
-
+      <div className="modes">
+        {[15, 30, 60].map((time) => (
+          <div
+            key={time}
+            className={`time-mode${testTime === time ? " active" : ""}`}
+            id={time}
+            onClick={updateTime}
+          >
+            {time}s
+          </div>
+        ))}
+      </div>
     </div>
-  )
-}
+  );
+};
 
-export default UpperMenu
+export default UpperMenu;

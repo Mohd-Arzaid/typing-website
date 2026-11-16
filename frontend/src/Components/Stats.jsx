@@ -3,6 +3,7 @@ import Graph from "./Graph";
 import { useEffect } from "react";
 import { useSession } from "../lib/auth-client";
 import { saveResult } from "../lib/api";
+import { useTheme } from "../Context/ThemeContext";
 
 const Stats = ({
   wpm,
@@ -14,6 +15,8 @@ const Stats = ({
   graphData,
 }) => {
   const { data: session } = useSession();
+  const { theme } = useTheme();
+  const toastTheme = theme.background === "#ffffff" ? "light" : "dark";
   let timeSet = new Set();
 
   const newGraph = graphData.filter((i) => {
@@ -29,7 +32,7 @@ const Stats = ({
         toast.error("Invalid test", {
           position: "top-right",
           autoClose: 5000,
-          theme: "dark",
+          theme: toastTheme,
           transition: Bounce,
         });
         return;
@@ -39,7 +42,7 @@ const Stats = ({
         toast.warning("Login to save result", {
           position: "top-right",
           autoClose: 5000,
-          theme: "dark",
+          theme: toastTheme,
           transition: Bounce,
         });
         return;
@@ -54,14 +57,14 @@ const Stats = ({
         toast.success("Data Saved to DB", {
           position: "top-right",
           autoClose: 5000,
-          theme: "dark",
+          theme: toastTheme,
           transition: Bounce,
         });
       } catch {
         toast.error("Not able to save result", {
           position: "top-right",
           autoClose: 5000,
-          theme: "dark",
+          theme: toastTheme,
           transition: Bounce,
         });
       }
