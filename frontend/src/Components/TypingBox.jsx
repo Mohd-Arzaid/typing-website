@@ -5,6 +5,8 @@ import Stats from "./Stats";
 import randomWords from "random-words";
 
 const EXTRA_CHAR_CAP = 10;
+const WORD_REFILL_THRESHOLD = 10;
+const WORD_BATCH = 50;
 
 const CHAR_BASE = "relative inline-block transition-colors duration-75";
 const CLS = {
@@ -20,9 +22,9 @@ const WORD_BASE = "relative m-0 whitespace-nowrap";
 const WORD_ERROR = `${WORD_BASE} after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:rounded-full after:bg-error/50`;
 
 const CARET_LEFT =
-  "typing-cursor absolute top-0.5 -left-px h-[1.2em] w-0.5 rounded-full bg-accent";
+  "typing-cursor absolute top-0.5 -left-px h-[1.2em] w-0.5 rounded-full bg-caret";
 const CARET_RIGHT =
-  "typing-cursor absolute top-0.5 -right-px h-[1.2em] w-0.5 rounded-full bg-accent";
+  "typing-cursor absolute top-0.5 -right-px h-[1.2em] w-0.5 rounded-full bg-caret";
 
 const clearCarets = (root) => {
   root?.querySelectorAll(".typing-cursor").forEach((el) => el.remove());
@@ -75,6 +77,8 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
   const [rowOffset, setRowOffset] = useState(0);
   const [screenFade, setScreenFade] = useState(1);
   const [showResults, setShowResults] = useState(false);
+  const [restartSpinning, setRestartSpinning] = useState(false);
+  const [wordsEpoch, setWordsEpoch] = useState(0);
 
   const tabPressedRef = useRef(false);
   const chromeTimerRef = useRef(null);
@@ -83,7 +87,7 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
   const currWordIndexRef = useRef(0);
   const currCharIndexRef = useRef(0);
 
-  const [wordsArray, setWordsArray] = useState(() => randomWords(50));
+  const [wordsArray, setWordsArray] = useState(() => randomWords(WORD_BATCH));
   const [currWordIndex, setCurrWordIndex] = useState(0);
   const [currCharIndex, setCurrCharIndex] = useState(0);
 
@@ -91,12 +95,17 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
     return Array(wordsArray.length)
       .fill(0)
       .map(() => createRef(null));
-  }, [wordsArray]);
+  }, [wordsArray.length]);
 
   const elapsed = Math.max(testTime - countDown, 1);
   const liveWpm = testStart
     ? Math.round(correctChars / 5 / (elapsed / 60))
     : null;
+  const typedTotal = correctChars + incorrectChars;
+  const liveAcc =
+    testStart && typedTotal > 0
+      ? Math.round((correctChars / typedTotal) * 100)
+      : null;
 
   const setChrome = (visible) => {
     onChromeVisibilityChange?.(visible);
@@ -117,6 +126,13 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
     setIsActivelyTyping(true);
     clearTimeout(typingIdleRef.current);
     typingIdleRef.current = setTimeout(() => setIsActivelyTyping(false), 1000);
+  };
+
+  const ensureWordsAhead = (wordIdx) => {
+    setWordsArray((prev) => {
+      if (prev.length - wordIdx > WORD_REFILL_THRESHOLD) return prev;
+      return [...prev, ...randomWords(WORD_BATCH)];
+    });
   };
 
   const updateScroll = () => {
@@ -201,11 +217,18 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
       setGraphData([]);
       setRowOffset(0);
       setIsActivelyTyping(false);
-      setWordsArray(randomWords(50));
+      setWordsArray(randomWords(WORD_BATCH));
+      setWordsEpoch((n) => n + 1);
       setChrome(true);
       focusInput();
       requestAnimationFrame(() => setScreenFade(1));
     }, 150);
+  };
+
+  const handleRestartClick = () => {
+    setRestartSpinning(true);
+    setTimeout(() => setRestartSpinning(false), 600);
+    resetTest();
   };
 
   const resetWordSpanRefClassname = () => {
@@ -253,6 +276,8 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
       testStartRef.current = true;
       scheduleChromeHide();
     }
+
+    ensureWordsAhead(currWordIndex);
 
     const wordEl = wordsSpanRef[currWordIndex]?.current;
     if (!wordEl) return;
@@ -387,7 +412,26 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
 
   useEffect(() => {
     resetWordSpanRefClassname();
-  }, [wordsArray]);
+  }, [wordsEpoch]);
+
+  useEffect(() => {
+    if (!testStartRef.current || testEndRef.current) return;
+    const idx = currWordIndexRef.current;
+    const charIdx = currCharIndexRef.current;
+    requestAnimationFrame(() => {
+      const wordEl = wordsSpanRef[idx]?.current;
+      if (!wordEl) return;
+      if (
+        !wordEl.querySelector(".typing-cursor") &&
+        !wordEl.querySelector(".current, .current-right")
+      ) {
+        if (charIdx === 0 && wordEl.children[0]) {
+          wordEl.children[0].className = CLS.current;
+        }
+      }
+      syncCaret(idx, charIdx);
+    });
+  }, [wordsArray.length]);
 
   useEffect(() => {
     focusInput();
@@ -462,16 +506,13 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
 
   return (
     <div className="mx-auto flex w-full max-w-site flex-col items-stretch gap-3">
-      <UpperMenu
-        countDown={countDown}
-        liveWpm={liveWpm}
-        testStart={testStart}
-      />
-
-      {!showResults && capsOn && (
-        <div className="pointer-events-none z-30 mx-auto -mb-1 inline-flex items-center justify-center rounded border border-border bg-bg/95 px-2 py-0.5 font-mono text-[10px] text-accent shadow-sm backdrop-blur">
-          Caps Lock
-        </div>
+      {!showResults && (
+        <UpperMenu
+          countDown={countDown}
+          liveWpm={liveWpm}
+          liveAcc={liveAcc}
+          testStart={testStart}
+        />
       )}
 
       <div
@@ -495,44 +536,76 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
             onRestart={resetTest}
           />
         ) : (
-          <div
-            className="relative h-[calc(4.875em+0.75rem)] w-full cursor-text overflow-hidden py-1 text-left font-mono text-[1.5rem] leading-relaxed lg:text-[1.875rem]"
-            onClick={focusInput}
-          >
-            <div
-              ref={wordsLayerRef}
-              className={[
-                "relative will-change-transform transition-transform duration-200 ease-[cubic-bezier(0.25,0.8,0.25,1)]",
-                isActivelyTyping && "is-typing",
-                !isFocused && "opacity-15",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              style={{ transform: `translateY(-${rowOffset}px)` }}
-            >
-              <div className="flex flex-wrap gap-x-2.5 gap-y-1 text-untyped">
-                {wordsArray.map((word, index) => (
-                  <span
-                    className={WORD_BASE}
-                    ref={wordsSpanRef[index]}
-                    key={`${word}-${index}`}
-                  >
-                    {word.split("").map((char, charIndex) => (
-                      <span key={charIndex} className={CHAR_BASE}>
-                        {char}
-                      </span>
-                    ))}
-                  </span>
-                ))}
-              </div>
-            </div>
-            {!isFocused && (
-              <div className="absolute inset-0 z-20 flex cursor-pointer items-center justify-center">
-                <span className="flex items-center gap-2 text-sm font-medium text-accent">
-                  Click or press Enter to focus
+          <div className="relative w-full">
+            {capsOn && (
+              <div className="pointer-events-none absolute top-3 right-0 left-0 z-30 flex items-center justify-center">
+                <span className="inline-flex items-center gap-1.5 rounded border border-border bg-bg/95 px-2 py-0.5 font-mono text-[10px] text-accent shadow-sm backdrop-blur">
+                  Caps Lock
                 </span>
               </div>
             )}
+
+            <div
+              className={[
+                "relative h-[calc(4.875em+0.625rem)] w-full cursor-text overflow-hidden text-left font-mono text-[1.5rem] leading-relaxed lg:text-[1.875rem]",
+                isActivelyTyping && "is-typing",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              onClick={focusInput}
+            >
+              <input
+                type="text"
+                className="absolute opacity-0"
+                ref={inputRef}
+                onKeyDown={handleUserInput}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+              />
+
+              {rowOffset > 0 && (
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-10 bg-gradient-to-b from-bg to-transparent" />
+              )}
+
+              <div
+                ref={wordsLayerRef}
+                className={[
+                  "relative will-change-transform transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.25,0.8,0.25,1)]",
+                  !isFocused && "opacity-15",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                style={{ transform: `translateY(-${rowOffset}px)` }}
+              >
+                <div className="flex flex-wrap gap-x-2.5 gap-y-1 text-untyped">
+                  {wordsArray.map((word, index) => (
+                    <span
+                      className={WORD_BASE}
+                      ref={wordsSpanRef[index]}
+                      key={`${word}-${index}`}
+                    >
+                      {word.split("").map((char, charIndex) => (
+                        <span key={charIndex} className={CHAR_BASE}>
+                          {char}
+                        </span>
+                      ))}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {!isFocused && (
+                <div className="absolute inset-0 z-20 flex cursor-pointer items-center justify-center">
+                  <span className="flex items-center gap-2 text-sm font-medium text-accent">
+                    Click or press Enter to focus
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -541,24 +614,32 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
         <div className="chrome mt-2 flex flex-col items-center gap-4 transition-opacity duration-400 ease-in-out">
           <button
             type="button"
-            className="inline-flex items-center justify-center rounded-lg p-2 text-muted transition-colors hover:text-correct active:rotate-90"
-            onClick={resetTest}
+            className="inline-flex items-center justify-center rounded-lg p-2 text-muted transition-colors hover:text-correct"
+            onClick={handleRestartClick}
             aria-label="Restart test"
             title="Restart test"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-              className="block h-4.5 w-4.5"
+            <span
+              className="inline-flex"
+              style={{
+                transition: "transform 0.6s cubic-bezier(0.4,0,0.2,1)",
+                transform: restartSpinning ? "rotate(360deg)" : "rotate(0deg)",
+              }}
             >
-              <path d="M21 12a9 9 0 1 1-2.64-6.36" />
-              <polyline points="21 3 21 9 15 9" />
-            </svg>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className="block h-4.5 w-4.5"
+              >
+                <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+                <polyline points="21 3 21 9 15 9" />
+              </svg>
+            </span>
           </button>
           <div className="hidden items-center gap-4 text-xs text-muted md:flex">
             <span className="flex items-center gap-1.5">
@@ -574,19 +655,6 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
           </div>
         </div>
       )}
-
-      <input
-        type="text"
-        className="absolute left-[-9999px] h-px w-px opacity-0"
-        ref={inputRef}
-        onKeyDown={handleUserInput}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        autoComplete="off"
-        autoCorrect="off"
-        autoCapitalize="off"
-        spellCheck={false}
-      />
     </div>
   );
 };

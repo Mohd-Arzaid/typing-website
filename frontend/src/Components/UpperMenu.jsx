@@ -1,25 +1,42 @@
 import { useTestMode } from "../Context/TestModeContext";
 
-const UpperMenu = ({ countDown, liveWpm = null, testStart = false }) => {
+const UpperMenu = ({
+  countDown,
+  liveWpm = null,
+  liveAcc = null,
+  testStart = false,
+}) => {
   const { testTime, setTestTime } = useTestMode();
 
   return (
-    <div className="chrome mb-3 flex min-h-8 w-full items-center justify-between font-mono transition-opacity duration-400 ease-in-out">
+    <div className="flex min-h-8 w-full items-center justify-between font-mono">
       <div className="flex min-w-0 items-center gap-5">
-        <div className="font-mono text-2xl font-bold tabular-nums text-accent">
+        <div
+          className={[
+            "font-mono text-2xl font-bold tabular-nums text-accent transition-opacity duration-200",
+            testStart ? "opacity-100" : "opacity-0",
+          ].join(" ")}
+        >
           {countDown}
         </div>
         <div
           className={[
-            "font-mono text-lg text-muted transition-opacity duration-200",
-            testStart ? "opacity-100" : "opacity-45",
+            "flex items-center gap-5 font-mono text-lg text-muted transition-opacity duration-200",
+            testStart ? "opacity-100" : "opacity-0",
           ].join(" ")}
         >
-          {testStart && liveWpm != null ? `${liveWpm} wpm` : "— wpm"}
+          <span className="tabular-nums">
+            {liveWpm ?? 0}{" "}
+            <span className="text-sm opacity-60">wpm</span>
+          </span>
+          <span className="tabular-nums">
+            {liveAcc ?? 0}%{" "}
+            <span className="text-sm opacity-60">acc</span>
+          </span>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="chrome flex items-center gap-4 transition-opacity duration-400 ease-in-out">
         {[15, 30, 60].map((time) => {
           const active = testTime === time;
           return (

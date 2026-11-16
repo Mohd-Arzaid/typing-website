@@ -79,3 +79,13 @@
     transform: translateY(0);
   }
 }
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 42%, var(--bg) 58%);
+  color: var(--fg);
+}
+
+::-moz-selection {
+  background: color-mix(in srgb, var(--accent) 42%, var(--bg) 58%);
+  color: var(--fg);
+}

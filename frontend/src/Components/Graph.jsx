@@ -31,10 +31,7 @@ const Graph = ({ graphData }) => {
     theme.background === "#ffffff"
       ? "rgba(113, 113, 123, 0.08)"
       : "rgba(255, 255, 255, 0.06)";
-  const fillColor =
-    theme.background === "#ffffff"
-      ? "rgba(0, 117, 149, 0.12)"
-      : "rgba(79, 195, 247, 0.12)";
+  const fillColor = `${lineColor}20`;
 
   return (
     <div className="h-72 w-full md:h-80">

@@ -4,7 +4,7 @@ import AccountCircle from "./AccountCircle";
 
 const Header = () => {
   return (
-    <header className="mx-auto flex min-h-14 w-full max-w-site items-center justify-between border-b border-border px-0 py-3">
+    <header className="mx-auto flex min-h-14 w-full max-w-site items-center justify-between border-b border-border/60 px-0 py-3">
       <Link
         to="/"
         className="flex cursor-pointer items-center gap-2.5 no-underline"

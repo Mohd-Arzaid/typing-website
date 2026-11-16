@@ -42,6 +42,7 @@ const Stats = ({
   });
 
   const consistency = useMemo(() => calcConsistency(newGraph), [newGraph]);
+  const charactersLabel = `${correctChars}/${incorrectChars}/${extraChars}/${missedChars}`;
 
   useEffect(() => {
     const pushDataToDB = async () => {
@@ -69,7 +70,7 @@ const Stats = ({
         await saveResult({
           wpm,
           accuracy,
-          characters: `${correctChars}/${incorrectChars}/${missedChars}/${extraChars}`,
+          characters: charactersLabel,
         });
         toast.success("Data Saved to DB", {
           position: "top-right",
@@ -113,20 +114,19 @@ const Stats = ({
   return (
     <div className="mx-auto flex w-full max-w-site animate-results-enter flex-col gap-6 text-left">
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-4">
-        <div className="flex w-full shrink-0 flex-col gap-4 pt-1 md:w-36">
+        <div className="flex w-full shrink-0 flex-col gap-1 pt-2 md:w-36">
           <div className="flex flex-col gap-1">
             <span className="text-sm text-muted">wpm</span>
-            <span className="font-mono text-5xl font-bold leading-none text-accent md:text-6xl">
+            <span className="font-mono text-6xl font-bold leading-none text-accent">
               {wpm}
             </span>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="mt-4 flex flex-col gap-1">
             <span className="text-sm text-muted">acc</span>
-            <span className="font-mono text-5xl font-bold leading-none text-accent md:text-6xl">
+            <span className="font-mono text-6xl font-bold leading-none text-accent">
               {safeAccuracy}%
             </span>
           </div>
-          <div className="mt-2 text-xs text-muted">time {testTime}s</div>
         </div>
 
         <div className="w-full md:flex-1">
@@ -144,7 +144,7 @@ const Stats = ({
         <div className="flex flex-col gap-1">
           <span className="text-xs text-muted">characters</span>
           <span className="font-mono text-2xl font-semibold text-correct">
-            {correctChars}/{incorrectChars}/{extraChars}/{missedChars}
+            {charactersLabel}
           </span>
         </div>
         <div className="flex flex-col gap-1">
@@ -165,7 +165,7 @@ const Stats = ({
         <button
           type="button"
           onClick={onRestart}
-          className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 font-sans text-sm font-medium text-correct transition-colors hover:border-accent hover:text-accent"
+          className="inline-flex items-center gap-2 px-4 py-2 font-sans text-sm text-muted transition-colors hover:text-accent"
         >
           Next test
         </button>
