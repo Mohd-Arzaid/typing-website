@@ -5,6 +5,7 @@ import { useState } from "react";
 import LoginForm from "./LoginForm";
 import SignupForm from "./SignupForm";
 import { getToastTheme, useTheme } from "../Context/ThemeContext";
+import { useTypingFocus } from "../Context/TypingFocusContext";
 import { Bounce, toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { signIn, signOut, useSession } from "../lib/auth-client";
@@ -14,6 +15,7 @@ const AccountCircle = () => {
   const [value, setValue] = useState(0);
   const { theme } = useTheme();
   const toastTheme = getToastTheme(theme);
+  const { setPauseRefocus, focusTypingInput } = useTypingFocus();
   const navigate = useNavigate();
   const { data: session } = useSession();
   const user = session?.user;
@@ -22,12 +24,17 @@ const AccountCircle = () => {
     if (user) {
       navigate("/user");
     } else {
+      setPauseRefocus(true);
       setOpen(true);
     }
   };
 
   const handleClose = () => {
     setOpen(false);
+    setPauseRefocus(false);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(focusTypingInput);
+    });
   };
 
   const logout = async () => {
@@ -71,6 +78,9 @@ const AccountCircle = () => {
       <button
         type="button"
         className="inline-flex h-9 items-center gap-2 rounded-full border border-accent bg-bg px-3.5 font-sans text-sm font-medium text-accent transition-colors duration-200 hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-caret"
+        onMouseDown={() => {
+          if (!user) setPauseRefocus(true);
+        }}
         onClick={handleModalOpen}
         aria-label={user ? "Open profile" : "Sign in"}
       >
@@ -91,6 +101,7 @@ const AccountCircle = () => {
       <Modal
         open={open}
         onClose={handleClose}
+        disableRestoreFocus
         slotProps={{
           backdrop: {
             sx: {

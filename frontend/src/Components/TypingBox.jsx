@@ -1,8 +1,9 @@
-import { createRef, useEffect, useMemo, useRef, useState } from "react";
+import { createRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LayoutGroup, motion } from "motion/react";
-import { IconRefresh } from "@tabler/icons-react";
+import { IconPointer, IconRefresh } from "@tabler/icons-react";
 import UpperMenu from "./UpperMenu";
 import { useTestMode } from "../Context/TestModeContext";
+import { useTypingFocus } from "../Context/TypingFocusContext";
 import Stats from "./Stats";
 import randomWords from "random-words";
 
@@ -51,6 +52,7 @@ const TypingBox = () => {
   const wordsLayerRef = useRef(null);
   const typingIdleRef = useRef(null);
   const { testTime } = useTestMode();
+  const { pauseRef, registerFocusInput } = useTypingFocus();
 
   const [countDown, setCountDown] = useState(testTime);
   const [intervalId, setIntervalId] = useState(null);
@@ -136,8 +138,30 @@ const TypingBox = () => {
     });
   };
 
-  const focusInput = () => {
+  const focusInput = useCallback(() => {
     inputRef.current?.focus();
+    setIsFocused(true);
+  }, []);
+
+  const handleFocus = () => {
+    if (pauseRef.current) return;
+    const active = document.activeElement;
+    if (
+      active &&
+      active.closest('[role="dialog"], [data-radix-dialog-content]')
+    ) {
+      return;
+    }
+    focusInput();
+  };
+
+  const handleInputBlur = () => {
+    if (pauseRef.current) return;
+    setIsFocused(false);
+  };
+
+  const handleInputFocus = () => {
+    setIsFocused(true);
   };
 
   const startTimer = () => {
@@ -422,7 +446,11 @@ const TypingBox = () => {
 
   useEffect(() => {
     focusInput();
-  }, []);
+  }, [focusInput]);
+
+  useEffect(() => {
+    return registerFocusInput(focusInput);
+  }, [registerFocusInput, focusInput]);
 
   useEffect(() => {
     return () => {
@@ -448,21 +476,6 @@ const TypingBox = () => {
         resetTest();
         return;
       }
-
-      const tag = e.target?.tagName?.toLowerCase();
-      const inField =
-        tag === "input" || tag === "textarea" || e.target?.isContentEditable;
-
-      if (
-        e.key === "Enter" &&
-        !tabPressedRef.current &&
-        !inField &&
-        !testEndRef.current &&
-        document.activeElement !== inputRef.current
-      ) {
-        e.preventDefault();
-        focusInput();
-      }
     };
 
     const onKeyUp = (e) => {
@@ -482,8 +495,34 @@ const TypingBox = () => {
     };
   }, [intervalId, testTime]);
 
+  useEffect(() => {
+    if (isFocused) return;
+
+    const handleEnterToFocus = (e) => {
+      if (e.key !== "Enter" || pauseRef.current || testEndRef.current) return;
+
+      const target = e.target;
+      if (
+        target?.closest?.(
+          'input, textarea, select, button, [contenteditable="true"], [role="dialog"], [data-radix-dialog-content]'
+        )
+      ) {
+        return;
+      }
+
+      e.preventDefault();
+      focusInput();
+    };
+
+    window.addEventListener("keydown", handleEnterToFocus);
+    return () => window.removeEventListener("keydown", handleEnterToFocus);
+  }, [isFocused, focusInput, pauseRef]);
+
   return (
-    <div className="mx-auto flex w-full max-w-site flex-col items-stretch gap-3">
+    <div
+      className="mx-auto flex w-full max-w-site flex-col items-stretch gap-3"
+      onClick={handleFocus}
+    >
       {!showResults && (
         <UpperMenu
           countDown={countDown}
@@ -537,8 +576,8 @@ const TypingBox = () => {
                 className="absolute opacity-0"
                 ref={inputRef}
                 onKeyDown={handleUserInput}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="off"
@@ -546,7 +585,7 @@ const TypingBox = () => {
               />
 
               {rowOffset > 0 && (
-                <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-10 bg-gradient-to-b from-bg to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-10 bg-linear-to-b from-bg to-transparent" />
               )}
 
               <div
@@ -602,7 +641,8 @@ const TypingBox = () => {
                   }}
                 >
                   <span className="flex items-center gap-2 text-sm font-medium text-accent">
-                    Click or press Enter to focus
+                    <IconPointer size={16} />
+                    Click here or press Enter to focus
                   </span>
                 </div>
               )}
@@ -616,6 +656,7 @@ const TypingBox = () => {
           <button
             type="button"
             className="inline-flex items-center justify-center rounded-lg p-2 text-muted transition-colors hover:text-correct"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={handleRestartClick}
             aria-label="Restart test"
             title="Restart test"

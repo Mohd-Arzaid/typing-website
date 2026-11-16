@@ -2,6 +2,7 @@ import Select, { components } from "react-select";
 import { IconBrandGithub, IconPalette } from "@tabler/icons-react";
 import { themeOptions } from "../Utils/themeOptions";
 import { useTheme } from "../Context/ThemeContext";
+import { useTypingFocus } from "../Context/TypingFocusContext";
 import CornerBrackets from "./CornerBrackets";
 
 const ThemeOption = (props) => {
@@ -114,9 +115,18 @@ const selectStyles = {
 
 const Footer = () => {
   const { setTheme, theme } = useTheme();
+  const { setPauseRefocus, focusTypingInput } = useTypingFocus();
+
+  const resumeTypingFocus = () => {
+    setPauseRefocus(false);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(focusTypingInput);
+    });
+  };
 
   const handleChange = (e) => {
     setTheme(e.value);
+    resumeTypingFocus();
   };
 
   return (
@@ -134,9 +144,15 @@ const Footer = () => {
         </a>
       </CornerBrackets>
 
-      <div className="min-w-44">
+      <div
+        className="min-w-44"
+        onMouseDown={() => setPauseRefocus(true)}
+      >
         <Select
           onChange={handleChange}
+          onMenuOpen={() => setPauseRefocus(true)}
+          onMenuClose={resumeTypingFocus}
+          onBlur={resumeTypingFocus}
           options={themeOptions}
           menuPlacement="top"
           menuPortalTarget={typeof document !== "undefined" ? document.body : null}

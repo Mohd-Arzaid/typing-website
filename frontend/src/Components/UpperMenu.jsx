@@ -40,13 +40,14 @@ const UpperMenu = ({
       </div>
 
       <div>
-        <div className="inline-flex h-9 w-fit items-center justify-center rounded-lg bg-surface p-[3px] text-muted">
+        <div className="inline-flex h-9 w-fit items-center justify-center rounded-lg bg-surface p-0.75 text-muted">
           {TIME_OPTIONS.map((time) => {
             const active = testTime === time;
             return (
               <button
                 key={time}
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => setTestTime(time)}
                 className={[
                   "relative inline-flex h-[calc(100%-1px)] cursor-pointer items-center justify-center rounded-md px-3 text-xs font-medium transition-colors duration-500 ease-in-out",

@@ -25,7 +25,7 @@ const CornerBrackets = ({ children, className = "" }) => {
         {showBrackets && (
           <>
             <motion.span
-              className="pointer-events-none absolute -inset-[3px] border border-dashed border-correct/40"
+              className="pointer-events-none absolute -inset-0.75 border border-dashed border-correct/40"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -35,7 +35,7 @@ const CornerBrackets = ({ children, className = "" }) => {
               <motion.span
                 key={id}
                 className={[
-                  "pointer-events-none absolute h-[5px] w-[5px] border-correct",
+                  "pointer-events-none absolute h-1.25 w-1.25 border-correct",
                   position,
                   border,
                 ].join(" ")}
