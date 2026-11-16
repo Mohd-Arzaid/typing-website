@@ -9,18 +9,22 @@ const HomePage = () => {
   return (
     <div
       className={[
-        "grid min-h-screen w-full grid-rows-[auto_1fr_auto] items-center gap-3 px-3 py-4 text-center sm:px-4 md:gap-3 md:px-6 md:py-6",
+        "grid min-h-screen w-full grid-rows-[auto_1fr_auto] gap-0 px-6 py-0 text-center",
         !chromeVisible &&
-          "[&_.chrome]:pointer-events-none [&_.chrome]:opacity-15",
+          "[&_.chrome]:pointer-events-none [&_.chrome]:opacity-10",
       ]
         .filter(Boolean)
         .join(" ")}
     >
-      <div className="chrome transition-opacity duration-300">
+      <div className="chrome shrink-0 transition-opacity duration-[400ms] ease-in-out">
         <Header />
       </div>
-      <TypingBox onChromeVisibilityChange={setChromeVisible} />
-      <div className="chrome transition-opacity duration-300">
+
+      <div className="flex min-h-0 flex-1 flex-col justify-center pb-16 md:pb-20">
+        <TypingBox onChromeVisibilityChange={setChromeVisible} />
+      </div>
+
+      <div className="chrome shrink-0 pb-4 transition-opacity duration-[400ms] ease-in-out">
         <Footer />
       </div>
     </div>

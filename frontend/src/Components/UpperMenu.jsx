@@ -4,14 +4,14 @@ const UpperMenu = ({ countDown, liveWpm = null, testStart = false }) => {
   const { testTime, setTestTime } = useTestMode();
 
   return (
-    <div className="chrome mx-auto flex w-full max-w-site items-center justify-between py-2 font-mono transition-opacity duration-300">
-      <div className="flex items-baseline gap-4">
-        <div className="min-w-[2ch] text-2xl font-bold text-accent md:text-[1.5rem]">
+    <div className="chrome mb-3 flex min-h-8 w-full items-center justify-between font-mono transition-opacity duration-[400ms] ease-in-out">
+      <div className="flex min-w-0 items-center gap-5">
+        <div className="font-mono text-2xl font-bold tabular-nums text-accent">
           {countDown}
         </div>
         <div
           className={[
-            "min-w-[4.5rem] text-left text-base text-muted",
+            "font-mono text-lg text-muted transition-opacity duration-200",
             testStart ? "opacity-100" : "opacity-45",
           ].join(" ")}
         >
@@ -19,17 +19,16 @@ const UpperMenu = ({ countDown, liveWpm = null, testStart = false }) => {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         {[15, 30, 60].map((time) => {
           const active = testTime === time;
           return (
             <button
               key={time}
               type="button"
-              id={String(time)}
               onClick={() => setTestTime(time)}
               className={[
-                "cursor-pointer text-[0.95rem] transition-colors",
+                "cursor-pointer rounded-md px-1.5 py-1 text-base transition-colors",
                 active
                   ? "font-semibold text-accent opacity-100"
                   : "text-muted opacity-55 hover:opacity-85 hover:text-correct",

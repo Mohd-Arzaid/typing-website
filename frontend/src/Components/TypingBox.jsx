@@ -4,9 +4,61 @@ import { useTestMode } from "../Context/TestModeContext";
 import Stats from "./Stats";
 import randomWords from "random-words";
 
+const EXTRA_CHAR_CAP = 10;
+
+const CHAR_BASE = "relative inline-block transition-colors duration-75";
+const CLS = {
+  correct: `${CHAR_BASE} text-correct is-correct`,
+  incorrect: `${CHAR_BASE} text-error is-incorrect`,
+  extra: `${CHAR_BASE} text-error/60 is-extra`,
+  current: `${CHAR_BASE} current`,
+  currentRight: `${CHAR_BASE} is-correct current-right`,
+  empty: CHAR_BASE,
+};
+
+const WORD_BASE = "relative m-0 whitespace-nowrap";
+const WORD_ERROR = `${WORD_BASE} after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:rounded-full after:bg-error/50`;
+
+const CARET_LEFT =
+  "typing-cursor absolute top-0.5 -left-px h-[1.2em] w-0.5 rounded-full bg-accent";
+const CARET_RIGHT =
+  "typing-cursor absolute top-0.5 -right-px h-[1.2em] w-0.5 rounded-full bg-accent";
+
+const clearCarets = (root) => {
+  root?.querySelectorAll(".typing-cursor").forEach((el) => el.remove());
+};
+
+const placeCaret = (wordEl, charIdx, atEnd = false) => {
+  if (!wordEl) return;
+  clearCarets(wordEl.parentElement || wordEl);
+  const letters = Array.from(wordEl.children);
+  if (!letters.length) return;
+
+  const target = atEnd
+    ? letters[letters.length - 1]
+    : letters[Math.min(charIdx, letters.length - 1)];
+  if (!target) return;
+
+  const caret = document.createElement("span");
+  caret.className = atEnd ? CARET_RIGHT : CARET_LEFT;
+  caret.setAttribute("aria-hidden", "true");
+  target.prepend(caret);
+};
+
+const letterText = (el) => {
+  if (!el) return "";
+  return Array.from(el.childNodes)
+    .filter((n) => n.nodeType === Node.TEXT_NODE)
+    .map((n) => n.textContent)
+    .join("");
+};
+
 const TypingBox = ({ onChromeVisibilityChange }) => {
   const inputRef = useRef(null);
+  const wordsLayerRef = useRef(null);
+  const typingIdleRef = useRef(null);
   const { testTime } = useTestMode();
+
   const [countDown, setCountDown] = useState(testTime);
   const [intervalId, setIntervalId] = useState(null);
   const [testStart, setTestStart] = useState(false);
@@ -19,13 +71,19 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
   const [graphData, setGraphData] = useState([]);
   const [isFocused, setIsFocused] = useState(true);
   const [capsOn, setCapsOn] = useState(false);
+  const [isActivelyTyping, setIsActivelyTyping] = useState(false);
+  const [rowOffset, setRowOffset] = useState(0);
+  const [screenFade, setScreenFade] = useState(1);
+  const [showResults, setShowResults] = useState(false);
+
   const tabPressedRef = useRef(false);
   const chromeTimerRef = useRef(null);
   const testStartRef = useRef(false);
   const testEndRef = useRef(false);
+  const currWordIndexRef = useRef(0);
+  const currCharIndexRef = useRef(0);
 
   const [wordsArray, setWordsArray] = useState(() => randomWords(50));
-
   const [currWordIndex, setCurrWordIndex] = useState(0);
   const [currCharIndex, setCurrCharIndex] = useState(0);
 
@@ -55,6 +113,35 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
     }, 2500);
   };
 
+  const markTypingActive = () => {
+    setIsActivelyTyping(true);
+    clearTimeout(typingIdleRef.current);
+    typingIdleRef.current = setTimeout(() => setIsActivelyTyping(false), 1000);
+  };
+
+  const updateScroll = () => {
+    requestAnimationFrame(() => {
+      const wordEl = wordsSpanRef[currWordIndexRef.current]?.current;
+      if (!wordEl) return;
+      const lineH = wordEl.offsetHeight + 4;
+      if (lineH > 0) {
+        const row = Math.round(wordEl.offsetTop / lineH);
+        setRowOffset(Math.max(0, row - 1) * lineH);
+      }
+    });
+  };
+
+  const syncCaret = (wordIdx, charIdx) => {
+    requestAnimationFrame(() => {
+      const wordEl = wordsSpanRef[wordIdx]?.current;
+      if (!wordEl) return;
+      const letters = Array.from(wordEl.children);
+      const atEnd = charIdx >= letters.length;
+      placeCaret(wordEl, charIdx, atEnd);
+      updateScroll();
+    });
+  };
+
   const startTimer = () => {
     const id = setInterval(timer, 1000);
     setIntervalId(id);
@@ -72,11 +159,16 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
         });
 
         if (latestCountDown === 1) {
-          setTestEnd(true);
-          testEndRef.current = true;
           clearInterval(id);
+          testEndRef.current = true;
           setChrome(true);
           clearTimeout(chromeTimerRef.current);
+          setScreenFade(0);
+          setTimeout(() => {
+            setTestEnd(true);
+            setShowResults(true);
+            requestAnimationFrame(() => setScreenFade(1));
+          }, 150);
           return 0;
         }
         return latestCountDown - 1;
@@ -87,42 +179,73 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
   const resetTest = () => {
     clearInterval(intervalId);
     clearTimeout(chromeTimerRef.current);
-    setCountDown(testTime);
-    setCurrWordIndex(0);
-    setCurrCharIndex(0);
-    setTestStart(false);
-    setTestEnd(false);
-    testStartRef.current = false;
-    testEndRef.current = false;
-    setCorrectChars(0);
-    setIncorrectChars(0);
-    setMissedChars(0);
-    setCorrectWords(0);
-    setExtraChars(0);
-    setGraphData([]);
-    setWordsArray(randomWords(50));
-    setChrome(true);
-    focusInput();
+    clearTimeout(typingIdleRef.current);
+    setScreenFade(0);
+
+    setTimeout(() => {
+      setCountDown(testTime);
+      setCurrWordIndex(0);
+      setCurrCharIndex(0);
+      currWordIndexRef.current = 0;
+      currCharIndexRef.current = 0;
+      setTestStart(false);
+      setTestEnd(false);
+      setShowResults(false);
+      testStartRef.current = false;
+      testEndRef.current = false;
+      setCorrectChars(0);
+      setIncorrectChars(0);
+      setMissedChars(0);
+      setCorrectWords(0);
+      setExtraChars(0);
+      setGraphData([]);
+      setRowOffset(0);
+      setIsActivelyTyping(false);
+      setWordsArray(randomWords(50));
+      setChrome(true);
+      focusInput();
+      requestAnimationFrame(() => setScreenFade(1));
+    }, 150);
   };
 
   const resetWordSpanRefClassname = () => {
     wordsSpanRef.forEach((ref) => {
       if (ref.current) {
-        Array.from(ref.current.childNodes).forEach(
-          (child) => (child.className = "")
-        );
+        ref.current.className = WORD_BASE;
+        Array.from(ref.current.children).forEach((child) => {
+          clearCarets(child);
+          child.className = CLS.empty;
+        });
       }
     });
 
-    if (wordsSpanRef[0]?.current) {
-      wordsSpanRef[0].current.childNodes[0].className = "current";
+    const first = wordsSpanRef[0]?.current?.children?.[0];
+    if (first) {
+      first.className = CLS.current;
+      placeCaret(wordsSpanRef[0].current, 0, false);
     }
+    updateScroll();
   };
 
   const handleUserInput = (e) => {
     if (e.getModifierState) {
       setCapsOn(e.getModifierState("CapsLock"));
     }
+
+    if (
+      e.key === "Shift" ||
+      e.key === "Control" ||
+      e.key === "Alt" ||
+      e.key === "Meta" ||
+      e.key === "Tab" ||
+      e.key === "Enter" ||
+      e.key === "Dead" ||
+      e.key === "Process"
+    ) {
+      return;
+    }
+
+    markTypingActive();
 
     if (!testStart) {
       startTimer();
@@ -131,86 +254,128 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
       scheduleChromeHide();
     }
 
-    const allCurrChars = wordsSpanRef[currWordIndex]?.current?.childNodes;
-    if (!allCurrChars) return;
+    const wordEl = wordsSpanRef[currWordIndex]?.current;
+    if (!wordEl) return;
+    const letters = Array.from(wordEl.children);
+    if (!letters.length) return;
 
     if (e.keyCode === 32) {
-      const correctCharsInWord =
-        wordsSpanRef[currWordIndex]?.current?.querySelectorAll(".correct") ||
-        [];
+      if (currCharIndex === 0) return;
 
-      if (correctCharsInWord.length === allCurrChars.length) {
-        setCorrectWords(correctWords + 1);
-      }
-
-      if (allCurrChars.length <= currCharIndex) {
-        allCurrChars[currCharIndex - 1].classList.remove("current-right");
+      const baseLen = wordsArray[currWordIndex]?.length || 0;
+      const correctInWord = wordEl.querySelectorAll(".is-correct").length;
+      const extras = wordEl.querySelectorAll(".is-extra").length;
+      if (correctInWord === baseLen && extras === 0) {
+        setCorrectWords((w) => w + 1);
       } else {
-        setMissedChars(missedChars + (allCurrChars.length - currCharIndex));
-        allCurrChars[currCharIndex].classList.remove("current");
+        wordEl.className = WORD_ERROR;
       }
 
-      if (wordsSpanRef[currWordIndex + 1]?.current) {
-        wordsSpanRef[currWordIndex + 1].current.childNodes[0].className =
-          "current";
+      if (letters.length <= currCharIndex) {
+        letters[currCharIndex - 1]?.classList.remove("current-right");
+      } else {
+        setMissedChars((m) => m + (letters.length - currCharIndex));
+        letters[currCharIndex]?.classList.remove("current");
       }
-      setCurrWordIndex(currWordIndex + 1);
+
+      clearCarets(wordsLayerRef.current);
+
+      const nextIdx = currWordIndex + 1;
+      const nextWord = wordsSpanRef[nextIdx]?.current;
+      if (nextWord?.children?.[0]) {
+        nextWord.children[0].className = CLS.current;
+      }
+      setCurrWordIndex(nextIdx);
       setCurrCharIndex(0);
-
+      currWordIndexRef.current = nextIdx;
+      currCharIndexRef.current = 0;
+      syncCaret(nextIdx, 0);
       return;
     }
 
     if (e.keyCode === 8) {
-      if (currCharIndex !== 0) {
-        if (allCurrChars.length === currCharIndex) {
-          if (allCurrChars[currCharIndex - 1].className.includes("extra")) {
-            allCurrChars[currCharIndex - 1].remove();
-            allCurrChars[currCharIndex - 2].className += " current-right";
-          } else {
-            allCurrChars[currCharIndex - 1].className = "current";
-          }
+      if (currCharIndex === 0) return;
 
-          setCurrCharIndex(currCharIndex - 1);
-          return;
+      if (letters.length === currCharIndex) {
+        const last = letters[currCharIndex - 1];
+        if (last.classList.contains("is-extra")) {
+          last.remove();
+          const prev = wordEl.children[currCharIndex - 2];
+          if (prev) {
+            prev.className = `${prev.className
+              .replace("current-right", "")
+              .trim()} current-right`.trim();
+          }
+        } else {
+          last.className = CLS.current;
         }
-        allCurrChars[currCharIndex].className = "";
-        allCurrChars[currCharIndex - 1].className = "current";
-        setCurrCharIndex(currCharIndex - 1);
+        const next = currCharIndex - 1;
+        setCurrCharIndex(next);
+        currCharIndexRef.current = next;
+        syncCaret(currWordIndex, next);
+        return;
       }
+
+      letters[currCharIndex].className = CLS.empty;
+      letters[currCharIndex - 1].className = CLS.current;
+      const next = currCharIndex - 1;
+      setCurrCharIndex(next);
+      currCharIndexRef.current = next;
+      syncCaret(currWordIndex, next);
       return;
     }
 
-    if (currCharIndex === allCurrChars.length) {
+    if (e.key.length !== 1) return;
+
+    if (currCharIndex === letters.length) {
+      const extras = wordEl.querySelectorAll(".is-extra").length;
+      if (extras >= EXTRA_CHAR_CAP) return;
+
+      letters[currCharIndex - 1]?.classList.remove("current-right");
       const newSpan = document.createElement("span");
       newSpan.innerText = e.key;
-      newSpan.className = "incorrect extra current-right";
-      allCurrChars[currCharIndex - 1].classList.remove("current-right");
-      wordsSpanRef[currWordIndex].current.append(newSpan);
-      setCurrCharIndex(currCharIndex + 1);
-      setExtraChars(extraChars + 1);
+      newSpan.className = `${CLS.extra} current-right`;
+      wordEl.append(newSpan);
+      const next = currCharIndex + 1;
+      setCurrCharIndex(next);
+      currCharIndexRef.current = next;
+      setExtraChars((x) => x + 1);
+      syncCaret(currWordIndex, next);
       return;
     }
 
-    if (e.key === allCurrChars[currCharIndex].innerText) {
-      allCurrChars[currCharIndex].className = "correct";
-      setCorrectChars(correctChars + 1);
+    const active = letters[currCharIndex];
+    if (e.key === letterText(active)) {
+      active.className = CLS.correct;
+      setCorrectChars((c) => c + 1);
     } else {
-      allCurrChars[currCharIndex].className = "incorrect";
-      setIncorrectChars(incorrectChars + 1);
+      active.className = CLS.incorrect;
+      setIncorrectChars((c) => c + 1);
     }
 
-    if (currCharIndex + 1 === allCurrChars.length) {
-      allCurrChars[currCharIndex].className += " current-right";
+    if (currCharIndex + 1 === letters.length) {
+      active.className = `${active.className} current-right`.trim();
     } else {
-      allCurrChars[currCharIndex + 1].className = "current";
+      letters[currCharIndex + 1].className = CLS.current;
     }
 
-    setCurrCharIndex(currCharIndex + 1);
+    const next = currCharIndex + 1;
+    setCurrCharIndex(next);
+    currCharIndexRef.current = next;
+    syncCaret(currWordIndex, next);
   };
 
   const calculateWPM = () => Math.round(correctChars / 5 / (testTime / 60));
 
-  const calculateAcc = () => Math.round((correctWords / currWordIndex) * 100);
+  const calculateAcc = () => {
+    if (!currWordIndex) return 0;
+    return Math.round((correctWords / currWordIndex) * 100);
+  };
+
+  const calculateRaw = () => {
+    const total = correctChars + incorrectChars + extraChars;
+    return Math.round(total / 5 / (testTime / 60));
+  };
 
   const focusInput = () => {
     inputRef.current?.focus();
@@ -239,6 +404,7 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
     return () => {
       window.removeEventListener("mousemove", onMouseMove);
       clearTimeout(chromeTimerRef.current);
+      clearTimeout(typingIdleRef.current);
     };
   }, []);
 
@@ -295,96 +461,119 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
   }, [intervalId, testTime]);
 
   return (
-    <div>
+    <div className="mx-auto flex w-full max-w-site flex-col items-stretch gap-3">
       <UpperMenu
         countDown={countDown}
         liveWpm={liveWpm}
         testStart={testStart}
       />
 
-      {!testEnd && capsOn && (
-        <div className="mx-auto mb-2.5 inline-flex items-center justify-center rounded-full border border-error/20 bg-error/10 px-2.5 py-1 font-mono text-[0.7rem] uppercase tracking-wider text-error">
+      {!showResults && capsOn && (
+        <div className="pointer-events-none z-30 mx-auto -mb-1 inline-flex items-center justify-center rounded border border-border bg-bg/95 px-2 py-0.5 font-mono text-[10px] text-accent shadow-sm backdrop-blur">
           Caps Lock
         </div>
       )}
 
-      {testEnd ? (
-        <Stats
-          wpm={calculateWPM()}
-          accuracy={calculateAcc()}
-          correctChars={correctChars}
-          incorrectChars={incorrectChars}
-          missedChars={missedChars}
-          extraChars={extraChars}
-          graphData={graphData}
-          onRestart={resetTest}
-        />
-      ) : (
-        <div
-          className="relative mx-auto h-[calc(4.875em+0.5rem)] w-full max-w-site cursor-text overflow-hidden text-left max-md:h-[calc(5.5em+0.5rem)]"
-          onClick={focusInput}
-        >
+      <div
+        className="transition-[opacity,filter] duration-150 ease-out"
+        style={{
+          opacity: screenFade,
+          filter: screenFade < 1 ? "blur(4px)" : "none",
+        }}
+      >
+        {showResults ? (
+          <Stats
+            wpm={calculateWPM()}
+            accuracy={calculateAcc()}
+            raw={calculateRaw()}
+            correctChars={correctChars}
+            incorrectChars={incorrectChars}
+            missedChars={missedChars}
+            extraChars={extraChars}
+            graphData={graphData}
+            testTime={testTime}
+            onRestart={resetTest}
+          />
+        ) : (
           <div
-            className={[
-              "words flex flex-wrap gap-x-2.5 gap-y-1 font-mono text-xl leading-relaxed transition-opacity duration-200 md:text-2xl",
-              !isFocused && "opacity-15",
-            ]
-              .filter(Boolean)
-              .join(" ")}
+            className="relative h-[calc(4.875em+0.75rem)] w-full cursor-text overflow-hidden py-1 text-left font-mono text-[1.5rem] leading-relaxed lg:text-[1.875rem]"
+            onClick={focusInput}
           >
-            {wordsArray.map((word, index) => (
-              <span
-                className="relative m-0"
-                ref={wordsSpanRef[index]}
-                key={index}
-              >
-                {word.split("").map((char, charIndex) => (
-                  <span key={charIndex}>{char}</span>
+            <div
+              ref={wordsLayerRef}
+              className={[
+                "relative will-change-transform transition-transform duration-200 ease-[cubic-bezier(0.25,0.8,0.25,1)]",
+                isActivelyTyping && "is-typing",
+                !isFocused && "opacity-15",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              style={{ transform: `translateY(-${rowOffset}px)` }}
+            >
+              <div className="flex flex-wrap gap-x-2.5 gap-y-1 text-untyped">
+                {wordsArray.map((word, index) => (
+                  <span
+                    className={WORD_BASE}
+                    ref={wordsSpanRef[index]}
+                    key={`${word}-${index}`}
+                  >
+                    {word.split("").map((char, charIndex) => (
+                      <span key={charIndex} className={CHAR_BASE}>
+                        {char}
+                      </span>
+                    ))}
+                  </span>
                 ))}
-              </span>
-            ))}
-          </div>
-          {!isFocused && (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center font-sans text-[0.95rem] tracking-wide text-correct">
-              Click or press Enter to focus
+              </div>
             </div>
-          )}
+            {!isFocused && (
+              <div className="absolute inset-0 z-20 flex cursor-pointer items-center justify-center">
+                <span className="flex items-center gap-2 text-sm font-medium text-accent">
+                  Click or press Enter to focus
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {!showResults && (
+        <div className="chrome mt-2 flex flex-col items-center gap-4 transition-opacity duration-[400ms] ease-in-out">
+          <button
+            type="button"
+            className="inline-flex items-center justify-center rounded-lg p-2 text-muted transition-colors hover:text-correct active:rotate-90"
+            onClick={resetTest}
+            aria-label="Restart test"
+            title="Restart test"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              className="block h-[18px] w-[18px]"
+            >
+              <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+              <polyline points="21 3 21 9 15 9" />
+            </svg>
+          </button>
+          <div className="hidden items-center gap-4 text-xs text-muted md:flex">
+            <span className="flex items-center gap-1.5">
+              <kbd className="rounded border border-border bg-[var(--kbd-bg)] px-1.5 py-0.5 font-mono text-[10px]">
+                tab
+              </kbd>
+              <span>+</span>
+              <kbd className="rounded border border-border bg-[var(--kbd-bg)] px-1.5 py-0.5 font-mono text-[10px]">
+                enter
+              </kbd>
+              <span>- restart test</span>
+            </span>
+          </div>
         </div>
       )}
-
-      <div className="chrome mt-5 flex flex-col items-center gap-4 transition-opacity duration-300">
-        <button
-          type="button"
-          className="inline-flex items-center justify-center rounded-lg p-2 text-muted transition-colors hover:text-correct active:rotate-90"
-          onClick={resetTest}
-          aria-label="Restart test"
-          title="Restart test"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-            className="block h-[18px] w-[18px]"
-          >
-            <path d="M21 12a9 9 0 1 1-2.64-6.36" />
-            <polyline points="21 3 21 9 15 9" />
-          </svg>
-        </button>
-        <div className="hidden items-center gap-1.5 text-xs text-muted opacity-85 md:flex">
-          <kbd className="rounded border border-border bg-[var(--kbd-bg)] px-1.5 py-0.5 font-mono text-[10px]">
-            tab
-          </kbd>
-          <span>+</span>
-          <kbd className="rounded border border-border bg-[var(--kbd-bg)] px-1.5 py-0.5 font-mono text-[10px]">
-            enter
-          </kbd>
-          <span>- restart test</span>
-        </div>
-      </div>
 
       <input
         type="text"

@@ -1,31 +1,47 @@
 import { Bounce, toast } from "react-toastify";
 import Graph from "./Graph";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useSession } from "../lib/auth-client";
 import { saveResult } from "../lib/api";
 import { useTheme } from "../Context/ThemeContext";
 
+const calcConsistency = (graphData) => {
+  const values = graphData.map((i) => i[1]).filter((v) => Number.isFinite(v));
+  if (values.length < 2) return 100;
+  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  if (mean === 0) return 100;
+  const variance =
+    values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / values.length;
+  const cv = Math.sqrt(variance) / mean;
+  return Math.max(0, Math.min(100, Math.round((1 - cv) * 100)));
+};
+
 const Stats = ({
   wpm,
   accuracy,
+  raw = 0,
   correctChars,
   incorrectChars,
   missedChars,
   extraChars,
   graphData,
+  testTime = 15,
   onRestart,
 }) => {
   const { data: session } = useSession();
   const { theme } = useTheme();
   const toastTheme = theme.background === "#ffffff" ? "light" : "dark";
-  let timeSet = new Set();
+  const timeSet = new Set();
 
   const newGraph = graphData.filter((i) => {
     if (!timeSet.has(i[0])) {
       timeSet.add(i[0]);
-      return i;
+      return true;
     }
+    return false;
   });
+
+  const consistency = useMemo(() => calcConsistency(newGraph), [newGraph]);
 
   useEffect(() => {
     const pushDataToDB = async () => {
@@ -79,11 +95,7 @@ const Stats = ({
 
     const onKeyDown = (e) => {
       const tag = e.target?.tagName?.toLowerCase();
-      if (
-        tag === "input" ||
-        tag === "textarea" ||
-        e.target?.isContentEditable
-      ) {
+      if (tag === "input" || tag === "textarea" || e.target?.isContentEditable) {
         return;
       }
       if (e.key === "Enter" && !e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -99,41 +111,70 @@ const Stats = ({
   const safeAccuracy = Number.isNaN(accuracy) ? 0 : accuracy;
 
   return (
-    <div className="mx-auto flex w-full max-w-site flex-col gap-6 text-left md:flex-row md:gap-6">
-      <div className="flex w-full flex-col justify-center gap-5 md:w-[30%]">
-        <div className="flex flex-col gap-0.5">
-          <div className="text-sm tracking-wide text-muted lowercase">wpm</div>
-          <div className="font-mono text-4xl font-bold leading-tight text-correct md:text-[2.75rem]">
-            {wpm}
+    <div className="mx-auto flex w-full max-w-site animate-results-enter flex-col gap-6 text-left">
+      <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-4">
+        <div className="flex w-full shrink-0 flex-col gap-4 pt-1 md:w-36">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm text-muted">wpm</span>
+            <span className="font-mono text-5xl font-bold leading-none text-accent md:text-6xl">
+              {wpm}
+            </span>
           </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-sm text-muted">acc</span>
+            <span className="font-mono text-5xl font-bold leading-none text-accent md:text-6xl">
+              {safeAccuracy}%
+            </span>
+          </div>
+          <div className="mt-2 text-xs text-muted">time {testTime}s</div>
         </div>
 
-        <div className="flex flex-col gap-0.5">
-          <div className="text-sm tracking-wide text-muted lowercase">acc</div>
-          <div className="font-mono text-4xl font-bold leading-tight text-correct md:text-[2.75rem]">
-            {safeAccuracy}%
-          </div>
+        <div className="w-full md:flex-1">
+          <Graph graphData={newGraph} />
         </div>
+      </div>
 
-        <div className="flex flex-col gap-0.5">
-          <div className="text-sm tracking-wide text-muted lowercase">
-            characters
-          </div>
-          <div className="font-mono text-xl font-semibold text-muted">
-            {correctChars}/{incorrectChars}/{missedChars}/{extraChars}
-          </div>
+      <div className="grid grid-cols-2 gap-4 border-t border-border pt-5 sm:grid-cols-4">
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-muted">raw</span>
+          <span className="font-mono text-2xl font-semibold text-correct">
+            {raw}
+          </span>
         </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-muted">characters</span>
+          <span className="font-mono text-2xl font-semibold text-correct">
+            {correctChars}/{incorrectChars}/{extraChars}/{missedChars}
+          </span>
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-muted">consistency</span>
+          <span className="font-mono text-2xl font-semibold text-correct">
+            {consistency}%
+          </span>
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-muted">time</span>
+          <span className="font-mono text-2xl font-semibold text-correct">
+            {testTime}s
+          </span>
+        </div>
+      </div>
 
-        <div className="mt-2 flex items-center gap-1.5 text-xs text-muted opacity-80">
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+        <button
+          type="button"
+          onClick={onRestart}
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 font-sans text-sm font-medium text-correct transition-colors hover:border-accent hover:text-accent"
+        >
+          Next test
+        </button>
+        <div className="flex items-center gap-1.5 text-xs text-muted opacity-80">
           <kbd className="rounded border border-border bg-[var(--kbd-bg)] px-1.5 py-0.5 font-mono text-[10px]">
             enter
           </kbd>
           <span>- next test</span>
         </div>
-      </div>
-
-      <div className="min-h-[220px] w-full md:min-h-[260px] md:w-[70%]">
-        <Graph graphData={newGraph} />
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { CircularProgress } from "@mui/material";
 import TableUserData from "../Components/TableUserData";
 import Graph from "../Components/Graph";
 import UserInfo from "../Components/UserInfo";
+import Header from "../Components/Header";
 import { useSession } from "../lib/auth-client";
 import { fetchResults } from "../lib/api";
 
@@ -56,12 +57,13 @@ const UserPage = () => {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-site flex-col gap-6 px-4 py-6">
+    <div className="mx-auto flex min-h-screen w-full max-w-site flex-col gap-6 px-6 py-0">
+      <Header />
       <UserInfo totalTestTaken={data.length} />
       <div className="w-full">
         <Graph graphData={graphData} />
       </div>
-      <div className="w-full overflow-x-auto">
+      <div className="w-full overflow-x-auto pb-6">
         <TableUserData data={data} />
       </div>
     </div>

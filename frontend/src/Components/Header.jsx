@@ -1,19 +1,24 @@
+import { Link } from "react-router-dom";
 import LOGO from "../pastille-methode.svg";
 import AccountCircle from "./AccountCircle";
 
 const Header = () => {
   return (
-    <header className="mx-auto flex w-full max-w-site items-center justify-between min-h-14">
-      <div className="flex items-center gap-2.5">
+    <header className="mx-auto flex min-h-14 w-full max-w-site items-center justify-between border-b border-border px-0 py-3">
+      <Link
+        to="/"
+        className="flex cursor-pointer items-center gap-2.5 no-underline"
+        aria-label="Typing Playground home"
+      >
         <img
-          alt="logo"
+          alt=""
           src={LOGO}
-          className="block h-8 w-auto shrink-0 object-contain md:h-10"
+          className="block h-10 w-auto shrink-0 object-contain"
         />
-        <span className="select-none font-sans text-[1.05rem] font-bold leading-tight tracking-tight text-accent md:text-[1.35rem]">
+        <span className="select-none font-sans text-2xl font-bold leading-tight tracking-tight text-accent md:text-3xl">
           Typing Playground
         </span>
-      </div>
+      </Link>
       <div className="flex items-center gap-1.5 text-muted">
         <AccountCircle />
       </div>

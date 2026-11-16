@@ -14,6 +14,7 @@
   --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, monospace;
   --max-width-site: 65rem;
+  --animate-results-enter: results-fade-up 300ms ease-out both;
 }
 
 @layer base {
@@ -48,51 +49,33 @@
   }
 }
 
-/* Imperative typing classes — mutated by TypingBox DOM logic */
-.words {
-  color: var(--untyped);
-}
-
-.current {
-  border-left: 2px solid var(--caret);
-  margin-left: -2px;
-  animation: caret-blink 1s ease-in-out infinite;
-}
-
-.current-right {
-  border-right: 2px solid var(--caret);
-  animation: caret-blink-right 1s ease-in-out infinite;
-}
-
-.correct {
-  color: var(--correct);
-}
-
-.incorrect {
-  color: var(--error);
-}
-
-.extra {
-  color: var(--error);
-  opacity: 0.6;
-}
-
-@keyframes caret-blink {
+/* KeyZen-style caret blink only */
+@keyframes cursor-blink {
   0%,
   100% {
-    border-left-color: var(--caret);
+    opacity: 1;
   }
   50% {
-    border-left-color: transparent;
+    opacity: 0;
   }
 }
 
-@keyframes caret-blink-right {
-  0%,
-  100% {
-    border-right-color: var(--caret);
+.typing-cursor {
+  animation: cursor-blink 1s ease-in-out infinite;
+}
+
+.is-typing .typing-cursor {
+  animation-play-state: paused;
+  opacity: 1;
+}
+
+@keyframes results-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
-  50% {
-    border-right-color: transparent;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
