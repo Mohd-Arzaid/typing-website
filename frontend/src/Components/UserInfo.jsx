@@ -10,7 +10,7 @@ const UserInfo = ({ totalTestTaken }) => {
     : "";
 
   return (
-    <div className="mx-auto flex w-full max-w-site flex-col items-center justify-center rounded-xl bg-[var(--kbd-bg)] text-center md:min-h-60 md:flex-row">
+    <div className="mx-auto flex w-full max-w-site flex-col items-center justify-center rounded-xl bg-(--kbd-bg) text-center md:min-h-60 md:flex-row">
       <div className="flex w-full items-center gap-4 border-border p-6 md:w-1/2 md:border-r md:border-b-0 border-b">
         <div className="flex w-2/5 justify-center text-accent">
           <AccountCircleIcon sx={{ fontSize: 72 }} />

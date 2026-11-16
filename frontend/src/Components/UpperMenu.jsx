@@ -4,7 +4,7 @@ const UpperMenu = ({ countDown, liveWpm = null, testStart = false }) => {
   const { testTime, setTestTime } = useTestMode();
 
   return (
-    <div className="chrome mb-3 flex min-h-8 w-full items-center justify-between font-mono transition-opacity duration-[400ms] ease-in-out">
+    <div className="chrome mb-3 flex min-h-8 w-full items-center justify-between font-mono transition-opacity duration-400 ease-in-out">
       <div className="flex min-w-0 items-center gap-5">
         <div className="font-mono text-2xl font-bold tabular-nums text-accent">
           {countDown}

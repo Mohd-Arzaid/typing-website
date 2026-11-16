@@ -538,7 +538,7 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
       </div>
 
       {!showResults && (
-        <div className="chrome mt-2 flex flex-col items-center gap-4 transition-opacity duration-[400ms] ease-in-out">
+        <div className="chrome mt-2 flex flex-col items-center gap-4 transition-opacity duration-400 ease-in-out">
           <button
             type="button"
             className="inline-flex items-center justify-center rounded-lg p-2 text-muted transition-colors hover:text-correct active:rotate-90"
@@ -554,7 +554,7 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden="true"
-              className="block h-[18px] w-[18px]"
+              className="block h-4.5 w-4.5"
             >
               <path d="M21 12a9 9 0 1 1-2.64-6.36" />
               <polyline points="21 3 21 9 15 9" />
@@ -562,11 +562,11 @@ const TypingBox = ({ onChromeVisibilityChange }) => {
           </button>
           <div className="hidden items-center gap-4 text-xs text-muted md:flex">
             <span className="flex items-center gap-1.5">
-              <kbd className="rounded border border-border bg-[var(--kbd-bg)] px-1.5 py-0.5 font-mono text-[10px]">
+              <kbd className="rounded border border-border bg-(--kbd-bg) px-1.5 py-0.5 font-mono text-[10px]">
                 tab
               </kbd>
               <span>+</span>
-              <kbd className="rounded border border-border bg-[var(--kbd-bg)] px-1.5 py-0.5 font-mono text-[10px]">
+              <kbd className="rounded border border-border bg-(--kbd-bg) px-1.5 py-0.5 font-mono text-[10px]">
                 enter
               </kbd>
               <span>- restart test</span>

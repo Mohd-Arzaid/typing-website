@@ -16,7 +16,7 @@ const HomePage = () => {
         .filter(Boolean)
         .join(" ")}
     >
-      <div className="chrome shrink-0 transition-opacity duration-[400ms] ease-in-out">
+      <div className="chrome shrink-0 transition-opacity duration-400 ease-in-out">
         <Header />
       </div>
 
@@ -24,7 +24,7 @@ const HomePage = () => {
         <TypingBox onChromeVisibilityChange={setChromeVisible} />
       </div>
 
-      <div className="chrome shrink-0 pb-4 transition-opacity duration-[400ms] ease-in-out">
+      <div className="chrome shrink-0 pb-4 transition-opacity duration-400 ease-in-out">
         <Footer />
       </div>
     </div>

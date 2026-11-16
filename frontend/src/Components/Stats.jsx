@@ -170,7 +170,7 @@ const Stats = ({
           Next test
         </button>
         <div className="flex items-center gap-1.5 text-xs text-muted opacity-80">
-          <kbd className="rounded border border-border bg-[var(--kbd-bg)] px-1.5 py-0.5 font-mono text-[10px]">
+          <kbd className="rounded border border-border bg-(--kbd-bg) px-1.5 py-0.5 font-mono text-[10px]">
             enter
           </kbd>
           <span>- next test</span>
