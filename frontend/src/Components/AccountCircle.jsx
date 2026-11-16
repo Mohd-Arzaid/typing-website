@@ -70,7 +70,7 @@ const AccountCircle = () => {
     <div className="flex items-center gap-2">
       <button
         type="button"
-        className="inline-flex h-9 items-center gap-2 rounded-full border border-accent bg-accent px-3.5 font-sans text-sm font-medium text-bg shadow-sm transition-colors duration-200 hover:bg-accent/85 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-caret"
+        className="inline-flex h-9 items-center gap-2 rounded-full border border-accent bg-bg px-3.5 font-sans text-sm font-medium text-accent transition-colors duration-200 hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-caret"
         onClick={handleModalOpen}
         aria-label={user ? "Open profile" : "Sign in"}
       >
