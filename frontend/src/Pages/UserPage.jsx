@@ -41,27 +41,29 @@ const UserPage = () => {
 
   if (isPending || dataLoading) {
     return (
-      <div className="center-of-screen">
-        <CircularProgress size={300} />
+      <div className="flex min-h-screen items-center justify-center text-center text-3xl text-muted">
+        <CircularProgress size={120} sx={{ color: "var(--accent)" }} />
       </div>
     );
   }
 
   if (!dataLoading && data.length === 0) {
     return (
-      <div className="center-of-screen">
+      <div className="flex min-h-screen items-center justify-center px-4 text-center text-2xl text-muted">
         <span>Take some tests then come back!!</span>
       </div>
     );
   }
 
   return (
-    <div className="canvas">
+    <div className="mx-auto flex min-h-screen w-full max-w-site flex-col gap-6 px-4 py-6">
       <UserInfo totalTestTaken={data.length} />
-      <div className="graph">
+      <div className="w-full">
         <Graph graphData={graphData} />
       </div>
-      <TableUserData data={data} />
+      <div className="w-full overflow-x-auto">
+        <TableUserData data={data} />
+      </div>
     </div>
   );
 };

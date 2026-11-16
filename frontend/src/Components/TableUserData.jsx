@@ -12,7 +12,7 @@ const TableUserData = ({ data }) => {
   const { theme } = useTheme();
   const cellStyle={ color: theme.textColor, textAlign: "center" };
   return (
-    <div className="table">
+    <div className="w-full overflow-x-auto">
       <TableContainer>
         <Table>
           <TableHead>

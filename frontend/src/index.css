@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: var(--bg);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-correct: var(--correct);
+  --color-caret: var(--caret);
+  --color-error: var(--error);
+  --color-untyped: var(--untyped);
+  --color-border: var(--border);
+  --color-surface: var(--surface);
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --max-width-site: 65rem;
+}
+
+@layer base {
+  :root {
+    --bg: #ffffff;
+    --fg: #09090b;
+    --muted: #71717b;
+    --accent: #007595;
+    --correct: #09090b;
+    --caret: #007595;
+    --error: #e7000b;
+    --untyped: rgba(113, 113, 123, 0.4);
+    --border: #e4e4e7;
+    --surface: #fafafa;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: var(--font-sans);
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--muted);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.25s linear, color 0.25s linear;
+  }
+}
+
+/* Imperative typing classes — mutated by TypingBox DOM logic */
+.words {
+  color: var(--untyped);
+}
+
+.current {
+  border-left: 2px solid var(--caret);
+  margin-left: -2px;
+  animation: caret-blink 1s ease-in-out infinite;
+}
+
+.current-right {
+  border-right: 2px solid var(--caret);
+  animation: caret-blink-right 1s ease-in-out infinite;
+}
+
+.correct {
+  color: var(--correct);
+}
+
+.incorrect {
+  color: var(--error);
+}
+
+.extra {
+  color: var(--error);
+  opacity: 0.6;
+}
+
+@keyframes caret-blink {
+  0%,
+  100% {
+    border-left-color: var(--caret);
+  }
+  50% {
+    border-left-color: transparent;
+  }
+}
+
+@keyframes caret-blink-right {
+  0%,
+  100% {
+    border-right-color: var(--caret);
+  }
+  50% {
+    border-right-color: transparent;
+  }
+}

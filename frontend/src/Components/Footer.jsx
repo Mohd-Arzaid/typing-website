@@ -12,17 +12,17 @@ const Footer = () => {
 
   const handleChange = (e) => {
     setTheme(e.value);
-    localStorage.setItem("theme", JSON.stringify(e.value));
   };
 
   return (
-    <div className="footer">
-      <div className="links">
+    <footer className="mx-auto flex w-full max-w-site flex-wrap items-center justify-between gap-4 py-2 text-muted max-md:justify-center">
+      <div className="flex items-center gap-1.5">
         <a
           href="https://github.com/Mohd-Arzaid"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="GitHub"
+          className="inline-flex opacity-75 transition-colors hover:text-accent hover:opacity-100"
         >
           <GitHubIcon fontSize="small" />
         </a>
@@ -31,6 +31,7 @@ const Footer = () => {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="LinkedIn"
+          className="inline-flex opacity-75 transition-colors hover:text-accent hover:opacity-100"
         >
           <LinkedInIcon fontSize="small" />
         </a>
@@ -39,17 +40,18 @@ const Footer = () => {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="X"
+          className="inline-flex opacity-75 transition-colors hover:text-accent hover:opacity-100"
         >
           <TwitterIcon fontSize="small" />
         </a>
       </div>
 
-      <div className="themeButton">
+      <div className="min-w-40">
         <Select
           onChange={handleChange}
           options={themeOptions}
           menuPlacement="top"
-          defaultValue={{ label: theme.label, value: theme }}
+          value={{ label: theme.label, value: theme }}
           styles={{
             control: (styles) => ({
               ...styles,
@@ -58,9 +60,7 @@ const Footer = () => {
               boxShadow: "none",
               minHeight: "36px",
               fontSize: "0.875rem",
-              "&:hover": {
-                borderColor: theme.title,
-              },
+              "&:hover": { borderColor: theme.title },
             }),
             menu: (styles) => ({
               ...styles,
@@ -77,9 +77,7 @@ const Footer = () => {
             option: (styles, { isFocused }) => ({
               ...styles,
               backgroundColor: isFocused ? theme.title : theme.background,
-              color: isFocused
-                ? theme.background
-                : theme.textColor,
+              color: isFocused ? theme.background : theme.textColor,
               cursor: "pointer",
               fontSize: "0.875rem",
             }),
@@ -95,7 +93,7 @@ const Footer = () => {
           }}
         />
       </div>
-    </div>
+    </footer>
   );
 };
 
