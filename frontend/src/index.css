@@ -29,6 +29,9 @@
     --untyped: rgba(113, 113, 123, 0.4);
     --border: #e4e4e7;
     --surface: #fafafa;
+    --kbd-bg: #f4f4f5;
+    --menu-shadow: 0 12px 32px rgba(9, 9, 11, 0.12);
+    color-scheme: light;
   }
 
   * {
@@ -45,7 +48,6 @@
     background: var(--bg);
     color: var(--muted);
     -webkit-font-smoothing: antialiased;
-    transition: background 0.25s linear, color 0.25s linear;
   }
 }
 

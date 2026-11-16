@@ -10,7 +10,7 @@ import {
   Legend,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-import { useTheme } from "../Context/ThemeContext";
+import { isLightTheme, useTheme } from "../Context/ThemeContext";
 
 ChartJS.register(
   CategoryScale,
@@ -25,13 +25,16 @@ ChartJS.register(
 
 const Graph = ({ graphData }) => {
   const { theme } = useTheme();
+  const light = isLightTheme(theme);
   const lineColor = theme.caret || theme.title;
   const muted = theme.textColor;
-  const gridColor =
-    theme.background === "#ffffff"
-      ? "rgba(113, 113, 123, 0.08)"
-      : "rgba(255, 255, 255, 0.06)";
+  const fg = theme.correct || theme.textColor;
+  const gridColor = light
+    ? "rgba(113, 113, 123, 0.08)"
+    : "rgba(255, 255, 255, 0.06)";
   const fillColor = `${lineColor}20`;
+  const tooltipBg = light ? "rgba(250, 250, 250, 0.95)" : `${theme.background}f2`;
+  const tooltipBorder = light ? "#e4e4e7" : "rgba(255, 255, 255, 0.12)";
 
   return (
     <div className="h-60 w-full md:h-72">
@@ -62,16 +65,10 @@ const Graph = ({ graphData }) => {
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor:
-                theme.background === "#ffffff"
-                  ? "rgba(250, 250, 250, 0.95)"
-                  : "rgba(24, 24, 27, 0.95)",
+              backgroundColor: tooltipBg,
               titleColor: muted,
-              bodyColor: theme.correct || muted,
-              borderColor:
-                theme.background === "#ffffff"
-                  ? "#e4e4e7"
-                  : "rgba(255,255,255,0.12)",
+              bodyColor: fg,
+              borderColor: tooltipBorder,
               borderWidth: 1,
               displayColors: false,
               titleFont: { family: "Geist Mono", size: 11 },

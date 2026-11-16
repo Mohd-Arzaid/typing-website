@@ -1,13 +1,14 @@
 import { TextField } from "@mui/material";
-import { useTheme } from "../Context/ThemeContext";
+import { getToastTheme, isLightTheme, useTheme } from "../Context/ThemeContext";
 import { useState } from "react";
 import { Bounce, toast } from "react-toastify";
 import { signUp } from "../lib/auth-client";
 
 const SignupForm = ({ handleClose }) => {
   const { theme } = useTheme();
-  const toastTheme = theme.background === "#ffffff" ? "light" : "dark";
-  const isLight = theme.background === "#ffffff";
+  const toastTheme = getToastTheme(theme);
+  const light = isLightTheme(theme);
+  const accent = theme.caret || theme.title;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -16,30 +17,30 @@ const SignupForm = ({ handleClose }) => {
 
   const fieldSx = {
     "& .MuiInputLabel-root": {
-      color: theme.textColor,
+      color: "var(--muted)",
       fontFamily: '"Space Grotesk", sans-serif',
     },
     "& .MuiInputLabel-root.Mui-focused": {
-      color: theme.caret || theme.title,
+      color: accent,
     },
     "& .MuiOutlinedInput-root": {
-      color: theme.correct || theme.textColor,
+      color: "var(--fg)",
       fontFamily: '"Space Grotesk", sans-serif',
-      backgroundColor: isLight ? "#ffffff" : "transparent",
+      backgroundColor: light ? "var(--bg)" : "transparent",
       borderRadius: "8px",
       "& fieldset": {
-        borderColor: isLight ? "#e4e4e7" : "rgba(255,255,255,0.16)",
+        borderColor: "var(--border)",
       },
       "&:hover fieldset": {
-        borderColor: theme.textColor,
+        borderColor: "var(--muted)",
       },
       "&.Mui-focused fieldset": {
-        borderColor: theme.caret || theme.title,
+        borderColor: accent,
         borderWidth: "1.5px",
       },
     },
     "& .MuiFormHelperText-root": {
-      color: theme.error || "#e7000b",
+      color: "var(--error)",
       marginLeft: 0,
     },
   };

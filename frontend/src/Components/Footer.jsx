@@ -26,7 +26,7 @@ const ThemeSingleValue = (props) => {
     <components.SingleValue {...props}>
       <div className="flex items-center gap-2">
         <span
-          className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+          className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-black/10"
           style={{ backgroundColor: accent }}
           aria-hidden
         />
@@ -36,10 +36,84 @@ const ThemeSingleValue = (props) => {
   );
 };
 
+const selectStyles = {
+  control: (styles, state) => ({
+    ...styles,
+    backgroundColor: "var(--surface)",
+    borderColor: state.isFocused ? "var(--accent)" : "var(--border)",
+    borderRadius: "9999px",
+    borderWidth: "1px",
+    boxShadow: state.isFocused ? "0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent)" : "none",
+    minHeight: "36px",
+    paddingLeft: "4px",
+    paddingRight: "2px",
+    fontSize: "0.875rem",
+    cursor: "pointer",
+    transition: "border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease",
+    "&:hover": {
+      borderColor: "var(--accent)",
+    },
+  }),
+  valueContainer: (styles) => ({
+    ...styles,
+    padding: "0 8px",
+  }),
+  menu: (styles) => ({
+    ...styles,
+    backgroundColor: "var(--surface)",
+    borderRadius: "14px",
+    padding: "0.4rem",
+    border: "1px solid var(--border)",
+    boxShadow: "var(--menu-shadow)",
+    overflow: "hidden",
+    maxHeight: "none",
+    zIndex: 40,
+  }),
+  menuPortal: (styles) => ({
+    ...styles,
+    zIndex: 40,
+  }),
+  menuList: (styles) => ({
+    ...styles,
+    maxHeight: "none",
+    padding: 0,
+  }),
+  option: (styles, { isFocused, isSelected }) => ({
+    ...styles,
+    backgroundColor: isSelected
+      ? "color-mix(in srgb, var(--accent) 16%, transparent)"
+      : isFocused
+        ? "color-mix(in srgb, var(--accent) 10%, transparent)"
+        : "transparent",
+    color: isSelected || isFocused ? "var(--accent)" : "var(--fg)",
+    borderRadius: "10px",
+    cursor: "pointer",
+    fontSize: "0.875rem",
+    fontWeight: isSelected ? 600 : 500,
+    padding: "8px 10px",
+    marginBottom: "2px",
+    transition: "background-color 0.12s ease, color 0.12s ease",
+  }),
+  singleValue: (styles) => ({
+    ...styles,
+    color: "var(--accent)",
+    fontWeight: 500,
+  }),
+  placeholder: (styles) => ({
+    ...styles,
+    color: "var(--muted)",
+  }),
+  indicatorSeparator: () => ({ display: "none" }),
+  dropdownIndicator: (styles) => ({
+    ...styles,
+    color: "var(--accent)",
+    padding: "0 10px 0 4px",
+    "&:hover": { color: "var(--accent)" },
+  }),
+};
+
 const Footer = () => {
   const { setTheme, theme } = useTheme();
-  const menuBorder =
-    theme.background === "#ffffff" ? "#e4e4e7" : `${theme.title}40`;
 
   const handleChange = (e) => {
     setTheme(e.value);
@@ -65,6 +139,8 @@ const Footer = () => {
           onChange={handleChange}
           options={themeOptions}
           menuPlacement="top"
+          menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+          menuPosition="fixed"
           value={{ label: theme.label, value: theme }}
           components={{
             Option: ThemeOption,
@@ -75,76 +151,7 @@ const Footer = () => {
               </components.DropdownIndicator>
             ),
           }}
-          styles={{
-            control: (styles, state) => ({
-              ...styles,
-              backgroundColor: theme.background,
-              borderColor: theme.title,
-              borderRadius: "9999px",
-              boxShadow: state.isFocused
-                ? `0 0 0 3px ${theme.title}22`
-                : "none",
-              minHeight: "36px",
-              paddingLeft: "4px",
-              paddingRight: "2px",
-              fontSize: "0.875rem",
-              cursor: "pointer",
-              transition: "border-color 0.15s ease, box-shadow 0.15s ease",
-              "&:hover": {
-                borderColor: theme.title,
-              },
-            }),
-            valueContainer: (styles) => ({
-              ...styles,
-              padding: "0 8px",
-            }),
-            menu: (styles) => ({
-              ...styles,
-              backgroundColor: theme.background,
-              borderRadius: "14px",
-              padding: "0.4rem",
-              border: `1px solid ${menuBorder}`,
-              boxShadow: "0 12px 32px rgba(9,9,11,0.12)",
-              overflow: "hidden",
-              maxHeight: "none",
-            }),
-            menuList: (styles) => ({
-              ...styles,
-              maxHeight: "none",
-              padding: 0,
-            }),
-            option: (styles, { isFocused, isSelected }) => ({
-              ...styles,
-              backgroundColor: isSelected
-                ? theme.title
-                : isFocused
-                  ? `${theme.title}18`
-                  : "transparent",
-              color: isSelected ? theme.background : theme.correct || theme.textColor,
-              borderRadius: "10px",
-              cursor: "pointer",
-              fontSize: "0.875rem",
-              fontWeight: isSelected ? 600 : 500,
-              padding: "8px 10px",
-              marginBottom: "2px",
-            }),
-            singleValue: (styles) => ({
-              ...styles,
-              color: theme.title,
-              fontWeight: 500,
-            }),
-            placeholder: (styles) => ({
-              ...styles,
-              color: theme.textColor,
-            }),
-            indicatorSeparator: () => ({ display: "none" }),
-            dropdownIndicator: (styles) => ({
-              ...styles,
-              color: theme.title,
-              padding: "0 10px 0 4px",
-              "&:hover": { color: theme.title },
-            }),
-          }}
+          styles={selectStyles}
         />
       </div>
     </footer>

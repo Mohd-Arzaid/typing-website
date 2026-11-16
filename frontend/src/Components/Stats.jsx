@@ -3,7 +3,7 @@ import Graph from "./Graph";
 import { useEffect, useMemo } from "react";
 import { useSession } from "../lib/auth-client";
 import { saveResult } from "../lib/api";
-import { useTheme } from "../Context/ThemeContext";
+import { getToastTheme, useTheme } from "../Context/ThemeContext";
 
 const calcConsistency = (graphData) => {
   const values = graphData.map((i) => i[1]).filter((v) => Number.isFinite(v));
@@ -30,7 +30,7 @@ const Stats = ({
 }) => {
   const { data: session } = useSession();
   const { theme } = useTheme();
-  const toastTheme = theme.background === "#ffffff" ? "light" : "dark";
+  const toastTheme = getToastTheme(theme);
   const timeSet = new Set();
 
   const newGraph = graphData.filter((i) => {

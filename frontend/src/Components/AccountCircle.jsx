@@ -4,7 +4,7 @@ import { Modal } from "@mui/material";
 import { useState } from "react";
 import LoginForm from "./LoginForm";
 import SignupForm from "./SignupForm";
-import { useTheme } from "../Context/ThemeContext";
+import { getToastTheme, useTheme } from "../Context/ThemeContext";
 import { Bounce, toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { signIn, signOut, useSession } from "../lib/auth-client";
@@ -13,7 +13,7 @@ const AccountCircle = () => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(0);
   const { theme } = useTheme();
-  const toastTheme = theme.background === "#ffffff" ? "light" : "dark";
+  const toastTheme = getToastTheme(theme);
   const navigate = useNavigate();
   const { data: session } = useSession();
   const user = session?.user;
