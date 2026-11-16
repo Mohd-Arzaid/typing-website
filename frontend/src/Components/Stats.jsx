@@ -112,18 +112,18 @@ const Stats = ({
   const safeAccuracy = Number.isNaN(accuracy) ? 0 : accuracy;
 
   return (
-    <div className="mx-auto flex w-full max-w-site animate-results-enter flex-col gap-6 text-left">
+    <div className="mx-auto flex w-full max-w-site animate-results-enter flex-col gap-5 py-2 text-left">
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-4">
         <div className="flex w-full shrink-0 flex-col gap-1 pt-2 md:w-36">
           <div className="flex flex-col gap-1">
             <span className="text-sm text-muted">wpm</span>
-            <span className="font-mono text-6xl font-bold leading-none text-accent">
+            <span className="font-mono text-5xl font-bold leading-none text-accent md:text-6xl">
               {wpm}
             </span>
           </div>
           <div className="mt-4 flex flex-col gap-1">
             <span className="text-sm text-muted">acc</span>
-            <span className="font-mono text-6xl font-bold leading-none text-accent">
+            <span className="font-mono text-5xl font-bold leading-none text-accent md:text-6xl">
               {safeAccuracy}%
             </span>
           </div>
@@ -134,7 +134,7 @@ const Stats = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 border-t border-border pt-5 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 border-t border-border pt-4 sm:grid-cols-4">
         <div className="flex flex-col gap-1">
           <span className="text-xs text-muted">raw</span>
           <span className="font-mono text-2xl font-semibold text-correct">

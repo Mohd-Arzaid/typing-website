@@ -20,7 +20,7 @@ const HomePage = () => {
         <Header />
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col justify-center pb-16 md:pb-20">
+      <div className="flex min-h-0 flex-1 flex-col justify-center overflow-hidden py-2">
         <TypingBox onChromeVisibilityChange={setChromeVisible} />
       </div>
 

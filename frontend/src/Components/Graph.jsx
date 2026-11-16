@@ -34,7 +34,7 @@ const Graph = ({ graphData }) => {
   const fillColor = `${lineColor}20`;
 
   return (
-    <div className="h-72 w-full md:h-80">
+    <div className="h-60 w-full md:h-72">
       <Line
         data={{
           labels: graphData.map((i) => i[0]),
