@@ -4,7 +4,6 @@ import { Modal } from "@mui/material";
 import { useState } from "react";
 import LoginForm from "./LoginForm";
 import SignupForm from "./SignupForm";
-import CornerBrackets from "./CornerBrackets";
 import { useTheme } from "../Context/ThemeContext";
 import { Bounce, toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -69,17 +68,15 @@ const AccountCircle = () => {
 
   return (
     <div className="flex items-center gap-2">
-      <CornerBrackets>
-        <button
-          type="button"
-          className="inline-flex h-9 items-center gap-2 rounded-none border border-accent bg-accent px-3 font-sans text-[0.95rem] font-medium text-bg transition-colors hover:bg-accent/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-caret"
-          onClick={handleModalOpen}
-          aria-label={user ? "Open profile" : "Sign in"}
-        >
-          <AccountCircleIcon sx={{ fontSize: 20 }} />
-          <span className="hidden md:inline">Profile</span>
-        </button>
-      </CornerBrackets>
+      <button
+        type="button"
+        className="inline-flex h-9 items-center gap-2 rounded-full border border-accent bg-bg px-3.5 font-sans text-sm font-medium text-accent transition-colors hover:bg-accent hover:text-bg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-caret"
+        onClick={handleModalOpen}
+        aria-label={user ? "Open profile" : "Sign in"}
+      >
+        <AccountCircleIcon sx={{ fontSize: 20 }} />
+        <span className="hidden md:inline">Profile</span>
+      </button>
       {user && (
         <button
           type="button"
